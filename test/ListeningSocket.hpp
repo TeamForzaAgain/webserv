@@ -1,21 +1,21 @@
-#ifndef SOCKET_HPP
-#define SOCKET_HPP
+#ifndef LISTENINGSOCKET_HPP
+#define LISTENINGSOCKET_HPP
 
 #include "Include.hpp"
 
 
-class Socket
+class ListeningSocket
 {
 	public:
-		Socket(int domain, int type, int protocol, int port, u_long interface);
-		~Socket();
+		ListeningSocket(int domain, int type, int protocol, int port, u_long interface);
+		~ListeningSocket();
 
 		void bindSocket();
 		void listenSocket();
 
 		int getSocketFd();
 
-		class SocketException : public std::exception
+		class ListeningSocketException : public std::exception
 		{
 			public:
 				virtual const char *what() const throw();
@@ -24,8 +24,6 @@ class Socket
 	private:
 		int _socket_fd;
 		struct sockaddr_in _address;
-	
-	
 };
 
 #endif

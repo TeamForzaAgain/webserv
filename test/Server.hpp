@@ -2,7 +2,7 @@
 #define SERVER_HPP
 
 #include "Include.hpp"
-#include "Socket.hpp"
+#include "ListeningSocket.hpp"
 
 class Server
 {
@@ -11,6 +11,7 @@ class Server
 		~Server();
 
 		void start();
+		int parseMessage(std::string const &buffer);
 
 		class ServerException : public std::exception
 		{
@@ -19,7 +20,9 @@ class Server
 		};
 
 	private:
-		Socket *_socket;
+		ListeningSocket *_listeningSocket;
+		std::vector<struct pollfd> _pollfds;
+		std::map<int, std::string> _buffers;
 };
 
 #endif

@@ -1,12 +1,12 @@
-#include "Socket.hpp"
+#include "ListeningSocket.hpp"
 
-Socket::Socket(int domain, int type, int protocol, int port, u_long interface)
+ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u_long interface)
 {
 	_socket_fd = socket(domain, type, protocol);
 	if (_socket_fd == -1)
 	{
 		perror(strerror(errno));
-		throw SocketException();
+		throw ListeningSocketException();
 	}
 
 	_address.sin_family = domain;
@@ -15,35 +15,35 @@ Socket::Socket(int domain, int type, int protocol, int port, u_long interface)
 }
 
 
-Socket::~Socket()
+ListeningSocket::~ListeningSocket()
 {
 	close(_socket_fd);
 }
 
-int Socket::getSocketFd()
+int ListeningSocket::getSocketFd()
 {
 	return _socket_fd;
 }
 
-void Socket::bindSocket()
+void ListeningSocket::bindSocket()
 {
 	if (bind(_socket_fd, (struct sockaddr*)&_address, sizeof(_address)) == -1)
 	{
 		perror(strerror(errno));
-		throw SocketException();
+		throw ListeningSocketException();
 	}
 }
 
-void Socket::listenSocket()
+void ListeningSocket::listenSocket()
 {
 	if (listen(_socket_fd, 5) == -1)
 	{
 		perror(strerror(errno));
-		throw SocketException();
+		throw ListeningSocketException();
 	}
 }
 
-const char *Socket::SocketException::what() const throw()
+const char *ListeningSocket::ListeningSocketException::what() const throw()
 {
 	return "In SocketException";
 }
