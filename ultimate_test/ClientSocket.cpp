@@ -71,10 +71,14 @@ int ClientSocket::parseMessage()
     return 1;
 }
 
+
+
 void ClientSocket::genResponse()
 {
     std::string const &request = std::string(_buffer.begin(), _buffer.end());
+
     _response = _server->genResponse(request);
+    _buffer.clear();
 }
 
 std::string ClientSocket::getBuffer() const

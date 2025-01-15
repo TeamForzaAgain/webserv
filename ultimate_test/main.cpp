@@ -11,10 +11,10 @@ int main()
     try
     {
         // Configura il primo server su porta 8080
-		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, inet_addr("127.0.0.1"), "Server8080", "/nfs/homes/tpicchio/Desktop/Corso_42/Progetti/webserv/ultimate_test/html/welcome.html");
+		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, "Server8080", "/nfs/homes/fdonati/cazzi/webserver/webserv/ultimate_test/html/welcome.html");
 
         // Configura il secondo server su porta 9090
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, inet_addr("127.0.0.1"), "Server9090", "/nfs/homes/tpicchio/Desktop/Corso_42/Progetti/webserv/ultimate_test/html/info.html");
+        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_ANY, "Server9090", "/nfs/homes/fdonati/cazzi/webserver/webserv/ultimate_test/html/info.html");
 
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 

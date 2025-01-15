@@ -134,9 +134,3 @@ const char *Server::ServerException::what() const throw()
 {
 	return "In ServerException";
 }
-
-bool Server::operator<(const Server &other) const
-{
-    // Puoi decidere come ordinare i server. Ecco un esempio basato sul nome del server:
-    return _serverName < other._serverName;
-}

@@ -48,9 +48,6 @@ void ServerManager::newClient(int fd, Server const *server)
     ClientSocket *newClient = new ClientSocket(fd, server);
     _clientSockets.insert(std::make_pair(fd, newClient));
 
-    // Aggiungi il nuovo client al poll
-    addPollFd(fd);
-
     std::cout << "Nuovo client connesso: " << fd << std::endl;
 }
 
@@ -59,17 +56,21 @@ void ServerManager::run()
 {
     while (true)
     {
+        std::cout << RED << "Polling..." << RESET << std::endl;
         int activity = poll(_pollfds.data(), _pollfds.size(), -1);
         if (activity == -1)
         {
             perror(strerror(errno));
             throw ServerManagerException();
         }
+        std::cout << RED << "Polling done, active sockets: " << activity << RESET << std::endl;
+        std::cout << RED << "Active listening sockets: " << _activeLs << RESET << std::endl;
         for (int i = 0; i < _activeLs; i++)
         {
             if (_pollfds[i].revents & POLLIN)
             {
                 int newSocket = accept(_pollfds[i].fd, NULL, NULL);
+                std::cout << YELLOW << "New connection on socket " << newSocket << " on i: " << i << RESET << std::endl;
                 if (newSocket == -1)
                 {
                     perror(strerror(errno));
@@ -93,6 +94,7 @@ void ServerManager::run()
         {
             if (_pollfds[i].revents & POLLIN)
             {
+                std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
                 char tempBuffer[1024];
                 int bytesRead = recv(_pollfds[i].fd, tempBuffer, sizeof(tempBuffer) - 1, 0);
                 if (bytesRead == -1)
@@ -110,6 +112,7 @@ void ServerManager::run()
 					std::cout << GREEN << "Response: " << _clientSockets[_pollfds[i].fd]->getResponse() << RESET << std::endl;
                     _pollfds[i].events = POLLOUT;
                 }
+                std::cout << YELLOW << "Not ended Buffer: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
             }
             if (_pollfds[i].revents & POLLOUT)
             {
@@ -121,10 +124,10 @@ void ServerManager::run()
 					perror(strerror(errno));
 					throw ServerManagerException();
 				}
-                // _pollfds[i].events = POLLIN;
-				// _pollfds[i].revents = 0;
-				close(_pollfds[i].fd);
-				_pollfds.erase(_pollfds.begin() + i);
+                _pollfds[i].events = POLLIN;
+				_pollfds[i].revents = 0;
+				//close(_pollfds[i].fd);
+				//_pollfds.erase(_pollfds.begin() + i);
             }
         }
     }
