@@ -16,5 +16,7 @@
 #include <unistd.h>
 #include <poll.h>
 #include <map>
+#include <fstream>
+#include <sstream>
 
 #endif

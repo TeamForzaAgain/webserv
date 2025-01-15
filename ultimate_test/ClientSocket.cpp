@@ -1,6 +1,6 @@
 #include "ClientSocket.hpp"
 
-ClientSocket::ClientSocket(int fd) : _fd(fd), _requestComplete(false)
+ClientSocket::ClientSocket(int fd, Server const *server) : _fd(fd), _server(server)
 {
 	_response = "ClientSocket response " + std::to_string(fd);
 }
@@ -69,6 +69,17 @@ int ClientSocket::parseMessage()
 
     // Nessun Content-Length: considera il messaggio completo se ha solo header
     return 1;
+}
+
+void ClientSocket::genResponse()
+{
+    std::string const &request = std::string(_buffer.begin(), _buffer.end());
+    _response = _server->genResponse(request);
+}
+
+std::string ClientSocket::getBuffer() const
+{
+    return std::string(_buffer.begin(), _buffer.end());
 }
 
 std::string ClientSocket::getResponse() const

@@ -12,8 +12,9 @@ class ServerManager
 		ServerManager();
 		~ServerManager();
 
-		void newServer(int domain, int type, int protocol, int port, u_long interface, const std::string& serverName);
-		void newClient(int fd);
+		void newServer(int domain, int type, int protocol, int port, u_long interface,
+							const std::string& serverName, std::string const &htmlPath);
+		void newClient(int fd, Server const *server);
 		void addPollFd(int fd);
 
 		int parseMessage(std::string const &buffer);

@@ -18,7 +18,7 @@ void ServerManager::addPollFd(int fd)
 }
 
 void ServerManager::newServer(int domain, int type, int protocol, int port, u_long interface,
-                                const std::string& serverName = "default")
+                                const std::string& serverName = "default", std::string const &htmlPath = "/html/welcome.html")
 {
 	for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
     {
@@ -27,7 +27,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
         // Caso 1: La socket ha lo stesso indirizzo e porta o esiste già una socket che ascolta su INADDR_ANY
         if (ls->getPort() == port && (ls->getInterface() == interface || ls->getInterface() == INADDR_ANY))
         {
-            _servers.insert(std::make_pair(Server(ls, serverName), ls));
+            _servers.insert(std::make_pair(Server(ls, serverName, htmlPath), ls));
             return;
         }
     }
@@ -35,7 +35,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     // Se non esiste una socket compatibile, creane una nuova
     ListeningSocket *newLs = new ListeningSocket(domain, type, protocol, port, interface);
     _activeLs++;
-    _servers.insert(std::make_pair(Server(newLs, serverName), newLs));
+    _servers.insert(std::make_pair(Server(newLs, serverName, htmlPath), newLs));
 
     // Aggiungi la nuova ListeningSocket al poll
     addPollFd(newLs->getFd());
@@ -43,9 +43,9 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     std::cout << "Nuovo server creato su IP " << interface << ", porta " << port << "." << std::endl;
 }
 
-void ServerManager::newClient(int fd)
+void ServerManager::newClient(int fd, Server const *server)
 {
-    ClientSocket *newClient = new ClientSocket(fd);
+    ClientSocket *newClient = new ClientSocket(fd, server);
     _clientSockets.insert(std::make_pair(fd, newClient));
 
     // Aggiungi il nuovo client al poll
@@ -75,7 +75,17 @@ void ServerManager::run()
                     perror(strerror(errno));
                     throw ServerManagerException();
                 }
-                newClient(newSocket);
+                // find the server that corresponds to the listening socket
+                Server const *server;
+                for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+                {
+                    if (it->second->getFd() == _pollfds[i].fd)
+                    {
+                        server = &(it->first);
+                        break;
+                    }
+                }
+                newClient(newSocket, server);
                 addPollFd(newSocket);
             }
         }
@@ -94,11 +104,16 @@ void ServerManager::run()
                 _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer);
 
                 if (_clientSockets[_pollfds[i].fd]->parseMessage())
+                {   
+                    std::cout << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << std::endl;
+                    _clientSockets[_pollfds[i].fd]->genResponse();
                     _pollfds[i].events = POLLOUT;
+                }
             }
             if (_pollfds[i].revents & POLLOUT)
             {
                 std::string response = _clientSockets[_pollfds[i].fd]->getResponse();
+                std::cout << "Sending response: " << response << std::endl;
                 send(_pollfds[i].fd, response.c_str(), response.size(), 0);
                 _pollfds[i].events = POLLIN;
             }
