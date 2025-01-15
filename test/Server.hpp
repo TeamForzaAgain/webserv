@@ -9,6 +9,7 @@ class Server
 	public:
 		Server(int domain, int type, int protocol, int port, u_long interface);
 		~Server();
+		bool operator<(const Server &other) const;
 
 		void start();
 		int parseMessage(std::string const &buffer);

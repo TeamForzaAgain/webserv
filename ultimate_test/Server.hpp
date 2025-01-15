@@ -9,6 +9,7 @@ class Server
 	public:
 		Server(ListeningSocket *ls, std::string const &serverName);
 		~Server();
+		bool operator<(const Server &other) const;
 
 	private:
 		ListeningSocket *_ls;

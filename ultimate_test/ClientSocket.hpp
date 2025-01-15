@@ -13,6 +13,7 @@ class ClientSocket
 		void addBuffer(const char *buffer);
 
 		int parseMessage();
+		std::string getResponse() const;
 
 	private:
 		int _fd;
