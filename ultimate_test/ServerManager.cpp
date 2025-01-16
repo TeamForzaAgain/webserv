@@ -109,15 +109,15 @@ void ServerManager::run()
                 {   
                     std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
                     _clientSockets[_pollfds[i].fd]->genResponse();
-					std::cout << GREEN << "Response: " << _clientSockets[_pollfds[i].fd]->getResponse() << RESET << std::endl;
                     _pollfds[i].events = POLLOUT;
                 }
-                std::cout << YELLOW << "Not ended Buffer: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
+                else
+					std::cout << YELLOW << "Not ended Buffer: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
             }
             if (_pollfds[i].revents & POLLOUT)
             {
                 std::string response = _clientSockets[_pollfds[i].fd]->getResponse();
-                std::cout << "Sending response: " << response << std::endl;
+                std::cout << GREEN << "Sending response: " << response << RESET << std::endl;
                 int bytesSent = send(_pollfds[i].fd, response.c_str(), response.size(), 0);
 				if (bytesSent == -1)
 				{
@@ -126,8 +126,6 @@ void ServerManager::run()
 				}
                 _pollfds[i].events = POLLIN;
 				_pollfds[i].revents = 0;
-				//close(_pollfds[i].fd);
-				//_pollfds.erase(_pollfds.begin() + i);
             }
         }
     }
