@@ -28,6 +28,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
         if (ls->getPort() == port && (ls->getInterface() == interface || ls->getInterface() == INADDR_ANY))
         {
             _servers.insert(std::make_pair(Server(ls, serverName, htmlPath), ls));
+            std::cout << "Nuovo server creato, nome "<< serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
             return;
         }
     }
@@ -40,8 +41,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     // Aggiungi la nuova ListeningSocket al poll
     addPollFd(newLs->getFd());
 
-    std::cout << "Nuovo server creato su IP " << interface << ", porta " << port << "." << std::endl;
-}
+std::cout << "Nuovo server creato, nome "<< serverName << ", IP " << interface << ", porta " << port << "." << std::endl;}
 
 void ServerManager::newClient(int fd, Server const *server)
 {
@@ -92,6 +92,14 @@ void ServerManager::run()
         }
         for (size_t i = _activeLs; i < _pollfds.size(); i++)
         {
+            if (_pollfds[i].revents & (POLLHUP | POLLERR))
+            {
+                std::cout << MAGENTA << "Closing socket " << _pollfds[i].fd << RESET << std::endl;
+                close(_pollfds[i].fd);
+                _clientSockets.erase(_pollfds[i].fd);
+                _pollfds.erase(_pollfds.begin() + i);
+                i--;
+            }
             if (_pollfds[i].revents & POLLIN)
             {
                 std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
@@ -102,17 +110,28 @@ void ServerManager::run()
                     perror(strerror(errno));
                     throw ServerManagerException();
                 }
+                if (bytesRead == 0)
+                {
+                    std::cout << MAGENTA << "Closing socket " << _pollfds[i].fd << RESET << std::endl;
+                    close(_pollfds[i].fd);
+                    _clientSockets.erase(_pollfds[i].fd);
+                    _pollfds.erase(_pollfds.begin() + i);
+                    i--;
+                    continue;
+                }
                 tempBuffer[bytesRead] = '\0';
                 _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer);
 
                 if (_clientSockets[_pollfds[i].fd]->parseMessage())
-                {   
+                {
                     std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
                     _clientSockets[_pollfds[i].fd]->genResponse();
                     _pollfds[i].events = POLLOUT;
                 }
                 else
 					std::cout << YELLOW << "Not ended Buffer: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
+                _pollfds[i].revents &= ~POLLIN;
+                continue;
             }
             if (_pollfds[i].revents & POLLOUT)
             {
@@ -125,7 +144,7 @@ void ServerManager::run()
 					throw ServerManagerException();
 				}
                 _pollfds[i].events = POLLIN;
-				_pollfds[i].revents = 0;
+				_pollfds[i].revents &= ~POLLOUT;
             }
         }
     }
