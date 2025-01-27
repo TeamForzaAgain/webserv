@@ -51,6 +51,97 @@ void ServerManager::newClient(int fd, Server const *server)
     std::cout << "Nuovo client connesso: " << fd << std::endl;
 }
 
+void ServerManager::registerClient(size_t i)
+{
+    int newSocket = accept(_pollfds[i].fd, NULL, NULL);
+    if (newSocket == -1)
+    {
+        perror("accept error");
+        throw ServerManagerException();
+    }
+
+    std::cout << YELLOW << "New connection on socket " << newSocket << " on i: " << i << RESET << std::endl;
+
+    // Trova il Server associato alla ListeningSocket
+    Server const *server = NULL;
+    for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+    {
+        if (it->second->getFd() == _pollfds[i].fd)
+        {
+            server = &(it->first);
+            break;
+        }
+    }
+
+    newClient(newSocket, server);
+    addPollFd(newSocket);
+}
+
+void ServerManager::closeClient(size_t &i)
+{
+    std::cout << MAGENTA << "Closing socket " << _pollfds[i].fd << RESET << std::endl;
+    close(_pollfds[i].fd);
+    _clientSockets.erase(_pollfds[i].fd);
+    _pollfds.erase(_pollfds.begin() + i);
+    i--; // Evita errori di iterazione
+}
+
+void ServerManager::readClient(size_t &i)
+{
+    std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
+
+    char tempBuffer[1024];
+    int bytesRead = recv(_pollfds[i].fd, tempBuffer, sizeof(tempBuffer) - 1, 0);
+
+    if (bytesRead == 0) // Il client ha chiuso la connessione
+    {
+        std::cout << MAGENTA << "Client disconnected, closing socket " << _pollfds[i].fd << RESET << std::endl;
+        closeClient(i);
+        return;
+    }
+
+    if (bytesRead == -1)
+    {
+        perror("recv error");
+        return;
+    }
+
+    tempBuffer[bytesRead] = '\0';
+    _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer);
+
+    // Se la richiesta è completa, genera la risposta
+    if (_clientSockets[_pollfds[i].fd]->parseEndMessage())
+    {
+        std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
+        _clientSockets[_pollfds[i].fd]->genResponse(*this);
+        _pollfds[i].events = POLLOUT;
+    }
+    else
+    {
+        std::cout << YELLOW << "Not ended Buffer: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
+    }
+}
+
+void ServerManager::writeClient(size_t &i)
+{
+    std::string response = _clientSockets[_pollfds[i].fd]->getResponse();
+    std::cout << GREEN << "Sending response: " << response << RESET << std::endl;
+
+    int bytesSent = send(_pollfds[i].fd, response.c_str(), response.size(), 0);
+    if (bytesSent == -1)
+    {
+        perror("send error");
+        return;
+    }
+
+    if (!_clientSockets[_pollfds[i].fd]->getKeepAlive())
+    {
+        std::cout << MAGENTA << "Client disconnected, closing socket " << _pollfds[i].fd << RESET << std::endl;
+        closeClient(i);
+        return;
+    }
+    _pollfds[i].events = POLLIN; // Torna in modalità lettura
+}
 
 void ServerManager::run()
 {
@@ -58,96 +149,55 @@ void ServerManager::run()
     {
         std::cout << RED << "Polling..." << RESET << std::endl;
         int activity = poll(_pollfds.data(), _pollfds.size(), -1);
+
         if (activity == -1)
         {
             perror(strerror(errno));
             throw ServerManagerException();
         }
+
         std::cout << RED << "Polling done, active sockets: " << activity << RESET << std::endl;
         std::cout << RED << "Active listening sockets: " << _activeLs << RESET << std::endl;
-        for (int i = 0; i < _activeLs; i++)
+
+        // **Gestione delle nuove connessioni**
+        for (size_t i = 0; i < _activeLs; i++)
         {
             if (_pollfds[i].revents & POLLIN)
-            {
-                int newSocket = accept(_pollfds[i].fd, NULL, NULL);
-                std::cout << YELLOW << "New connection on socket " << newSocket << " on i: " << i << RESET << std::endl;
-                if (newSocket == -1)
-                {
-                    perror(strerror(errno));
-                    throw ServerManagerException();
-                }
-                // find the server that corresponds to the listening socket
-                Server const *server;
-                for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
-                {
-                    if (it->second->getFd() == _pollfds[i].fd)
-                    {
-                        server = &(it->first);
-                        break;
-                    }
-                }
-                newClient(newSocket, server);
-                addPollFd(newSocket);
-            }
+                registerClient(i);
         }
+
+        // **Gestione delle socket client**
         for (size_t i = _activeLs; i < _pollfds.size(); i++)
         {
             if (_pollfds[i].revents & (POLLHUP | POLLERR))
-            {
-                std::cout << MAGENTA << "Closing socket " << _pollfds[i].fd << RESET << std::endl;
-                close(_pollfds[i].fd);
-                _clientSockets.erase(_pollfds[i].fd);
-                _pollfds.erase(_pollfds.begin() + i);
-                i--;
-            }
-            if (_pollfds[i].revents & POLLIN)
-            {
-                std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
-                char tempBuffer[1024];
-                int bytesRead = recv(_pollfds[i].fd, tempBuffer, sizeof(tempBuffer) - 1, 0);
-                if (bytesRead == -1)
-                {
-                    perror(strerror(errno));
-                    throw ServerManagerException();
-                }
-                if (bytesRead == 0)
-                {
-                    std::cout << MAGENTA << "Closing socket " << _pollfds[i].fd << RESET << std::endl;
-                    close(_pollfds[i].fd);
-                    _clientSockets.erase(_pollfds[i].fd);
-                    _pollfds.erase(_pollfds.begin() + i);
-                    i--;
-                    continue;
-                }
-                tempBuffer[bytesRead] = '\0';
-                _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer);
+                closeClient(i);
 
-                if (_clientSockets[_pollfds[i].fd]->parseMessage())
-                {
-                    std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
-                    _clientSockets[_pollfds[i].fd]->genResponse();
-                    _pollfds[i].events = POLLOUT;
-                }
-                else
-					std::cout << YELLOW << "Not ended Buffer: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
-                _pollfds[i].revents &= ~POLLIN;
-                continue;
-            }
-            if (_pollfds[i].revents & POLLOUT)
-            {
-                std::string response = _clientSockets[_pollfds[i].fd]->getResponse();
-                std::cout << GREEN << "Sending response: " << response << RESET << std::endl;
-                int bytesSent = send(_pollfds[i].fd, response.c_str(), response.size(), 0);
-				if (bytesSent == -1)
-				{
-					perror(strerror(errno));
-					throw ServerManagerException();
-				}
-                _pollfds[i].events = POLLIN;
-				_pollfds[i].revents &= ~POLLOUT;
-            }
+            else if (_pollfds[i].revents & POLLIN)
+                readClient(i);
+
+            else if (_pollfds[i].revents & POLLOUT)
+                writeClient(i);
         }
     }
+}
+
+Server* ServerManager::findServerByHost(const std::string& host, Server const *currentServer)
+{
+    if (!currentServer)
+        return NULL; // **Errore: non abbiamo un server di riferimento!**
+
+    ListeningSocket* listeningSocket = _servers[*currentServer]; // Otteniamo la ListeningSocket attuale
+
+    for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+    {
+        // **Trova un server con lo stesso nome e la stessa ListeningSocket**
+        if (it->first.getServerName() == host && it->second == listeningSocket)
+        {
+            return const_cast<Server*>(&(it->first)); // **Trovato il server giusto**
+        }
+    }
+
+    return NULL; // **Nessun server trovato**
 }
 
 const char *ServerManager::ServerManagerException::what() const throw()

@@ -6,6 +6,11 @@ Server::Server(ListeningSocket *ls, std::string const &serverName, std::string c
 Server::~Server()
 {}
 
+std::string Server::getServerName() const
+{
+    return _serverName;
+}
+
 bool Server::operator<(const Server &other) const
 {
     // Puoi decidere come ordinare i server. Ecco un esempio basato sul nome del server:

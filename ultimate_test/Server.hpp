@@ -11,6 +11,7 @@ class Server
 		~Server();
 		std::string genResponse(std::string const &request) const;
 
+		std::string getServerName() const;
 		bool operator<(const Server &other) const;
 
 	private:

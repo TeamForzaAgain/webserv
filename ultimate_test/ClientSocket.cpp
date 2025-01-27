@@ -1,8 +1,9 @@
-#include "ClientSocket.hpp"
+#include "ServerManager.hpp"
 
 ClientSocket::ClientSocket(int fd, Server const *server) : _fd(fd), _server(server)
 {
 	_response = "ClientSocket response " + std::to_string(fd);
+    _keepAlive = false;
 }
 
 ClientSocket::~ClientSocket()
@@ -13,6 +14,11 @@ ClientSocket::~ClientSocket()
 int ClientSocket::getFd() const
 {
 	return _fd;
+}
+
+bool ClientSocket::getKeepAlive() const
+{
+    return _keepAlive;
 }
 
 void ClientSocket::addBuffer(const char *buffer)
@@ -34,7 +40,7 @@ static int stringToInt(const std::string &str)
     return result;
 }
 
-int ClientSocket::parseMessage()
+int ClientSocket::parseEndMessage()
 {
 	std::string buffer = std::string(_buffer.begin(), _buffer.end());
     // Cerca la fine degli header HTTP: \r\n\r\n
@@ -71,12 +77,53 @@ int ClientSocket::parseMessage()
     return 1;
 }
 
+void ClientSocket::parseHostConnection(ServerManager &serverManager, const std::string &request)
+{
+    size_t hostPos = request.find("Host: ");
+    if (hostPos != std::string::npos)
+    {
+        hostPos += 6; // Saltiamo "Host: "
+        size_t hostEnd = request.find("\r\n", hostPos);
+        if (hostEnd != std::string::npos)
+        {
+            std::string host = request.substr(hostPos, hostEnd - hostPos);
+            std::cout << "Parsed Host: " << host << std::endl;
 
+            // Trova il nuovo server in base all'host e alla ListeningSocket del server attuale
+            Server* newServer = serverManager.findServerByHost(host, _server);
+            if (newServer)
+            {
+                std::cout << "Switching server based on Host: " << host << std::endl;
+                _server = newServer;
+            }
+        }
+    }
 
-void ClientSocket::genResponse()
+    // Controllo dell'header "Connection:"
+    size_t connPos = request.find("Connection: ");
+    if (connPos != std::string::npos)
+    {
+        connPos += 11; // Saltiamo "Connection: "
+        size_t connEnd = request.find("\r\n", connPos);
+        if (connEnd != std::string::npos)
+        {
+            std::string connection = request.substr(connPos, connEnd - connPos);
+            std::cout << "Parsed Connection: " << connection << std::endl;
+
+            // Gestiamo il valore di Connection
+            if (connection == "keep-alive")
+                _keepAlive = true;
+            else if (connection == "close")
+                _keepAlive = false;
+        }
+    }
+}
+
+void ClientSocket::genResponse(ServerManager &serverManager)
 {
     std::string const &request = std::string(_buffer.begin(), _buffer.end());
 
+    parseHostConnection(serverManager, request);
     _response = _server->genResponse(request);
     _buffer.clear();
 }

@@ -16,8 +16,7 @@ class ServerManager
 							const std::string& serverName, std::string const &htmlPath);
 		void newClient(int fd, Server const *server);
 		void addPollFd(int fd);
-
-		int parseMessage(std::string const &buffer);
+		Server* findServerByHost(const std::string& host, Server const *currentServer);
 
 		void run();
 
@@ -31,8 +30,13 @@ class ServerManager
 
 		std::vector<struct pollfd> _pollfds;
 		std::map<Server, ListeningSocket *> _servers;
-		int _activeLs;
+		size_t _activeLs;
 		std::map<int, ClientSocket *> _clientSockets;
+
+		void registerClient(size_t i);
+		void closeClient(size_t &i);
+		void readClient(size_t &i);
+		void writeClient(size_t &i);
 
 };
 
