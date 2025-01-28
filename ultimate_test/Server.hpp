@@ -12,6 +12,7 @@ class Server
 		std::string genResponse(std::string const &request) const;
 
 		std::string getServerName() const;
+		Server const *getServer() const;
 		bool operator<(const Server &other) const;
 
 	private:

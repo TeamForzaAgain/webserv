@@ -11,6 +11,11 @@ std::string Server::getServerName() const
     return _serverName;
 }
 
+Server const *Server::getServer() const
+{
+    return this;
+}
+
 bool Server::operator<(const Server &other) const
 {
     // Puoi decidere come ordinare i server. Ecco un esempio basato sul nome del server:

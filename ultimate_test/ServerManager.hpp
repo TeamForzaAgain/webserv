@@ -16,7 +16,7 @@ class ServerManager
 							const std::string& serverName, std::string const &htmlPath);
 		void newClient(int fd, Server const *server);
 		void addPollFd(int fd);
-		Server* findServerByHost(const std::string& host, Server const *currentServer);
+		Server const *findServerByHost(const std::string& host, Server const *currentServer);
 
 		void run();
 

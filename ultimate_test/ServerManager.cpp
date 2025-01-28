@@ -181,7 +181,7 @@ void ServerManager::run()
     }
 }
 
-Server* ServerManager::findServerByHost(const std::string& host, Server const *currentServer)
+Server const *ServerManager::findServerByHost(const std::string& host, Server const *currentServer)
 {
     if (!currentServer)
         return NULL; // **Errore: non abbiamo un server di riferimento!**
@@ -192,11 +192,8 @@ Server* ServerManager::findServerByHost(const std::string& host, Server const *c
     {
         // **Trova un server con lo stesso nome e la stessa ListeningSocket**
         if (it->first.getServerName() == host && it->second == listeningSocket)
-        {
-            return const_cast<Server*>(&(it->first)); // **Trovato il server giusto**
-        }
+            return it->first.getServer();
     }
-
     return NULL; // **Nessun server trovato**
 }
 

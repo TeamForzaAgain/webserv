@@ -90,7 +90,7 @@ void ClientSocket::parseHostConnection(ServerManager &serverManager, const std::
             std::cout << "Parsed Host: " << host << std::endl;
 
             // Trova il nuovo server in base all'host e alla ListeningSocket del server attuale
-            Server* newServer = serverManager.findServerByHost(host, _server);
+            Server const *newServer = serverManager.findServerByHost(host, _server);
             if (newServer)
             {
                 std::cout << "Switching server based on Host: " << host << std::endl;
