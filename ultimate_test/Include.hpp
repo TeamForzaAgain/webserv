@@ -18,6 +18,7 @@
 #include <map>
 #include <fstream>
 #include <sstream>
+#include <fcntl.h>
 #include <csignal>
 
 //ANSI color codes

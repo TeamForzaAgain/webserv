@@ -3,10 +3,12 @@
 
 #include "Include.hpp"
 #include "Server.hpp"
+#include "Socket.hpp"
+
 
 class ServerManager;
 
-class ClientSocket
+class ClientSocket : public Socket
 {
 	public:
 		ClientSocket(int fd, Server const *server);
