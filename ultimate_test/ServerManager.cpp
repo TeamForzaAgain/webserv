@@ -5,7 +5,37 @@ ServerManager::ServerManager() : _activeLs(0)
 
 ServerManager::~ServerManager()
 {
-	//pulire la memoria
+    bool alreadyDeletedLs = false;
+
+	std::cout << "Distruttore ServerManager" << std::endl;
+	_pollfds.clear();
+	if (!_clientSockets.empty())
+	{
+		for (std::map<int, ClientSocket *>::iterator it = _clientSockets.begin(); it != _clientSockets.end(); ++it)
+		{
+			delete it->second;
+			it->second = NULL;
+		}
+		_clientSockets.clear();
+	}
+	if (!_servers.empty())
+	{
+		for (std::map<Server, ListeningSocket*>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+		{
+			alreadyDeletedLs = false;
+			for (std::map<Server, ListeningSocket*>::iterator check = _servers.begin(); check != it; ++check)
+			{
+				if (check->second == it->second)
+				{
+					alreadyDeletedLs = true;
+					break;
+				}
+			}
+			if (!alreadyDeletedLs)
+				delete it->second;
+		}
+		_servers.clear();
+	}
 }
 
 void ServerManager::addPollFd(int fd)
@@ -41,7 +71,8 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     // Aggiungi la nuova ListeningSocket al poll
     addPollFd(newLs->getFd());
 
-std::cout << "Nuovo server creato, nome "<< serverName << ", IP " << interface << ", porta " << port << "." << std::endl;}
+	std::cout << "Nuovo server creato, nome "<< serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
+}
 
 void ServerManager::newClient(int fd, Server const *server)
 {

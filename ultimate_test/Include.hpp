@@ -18,6 +18,7 @@
 #include <map>
 #include <fstream>
 #include <sstream>
+#include <csignal>
 
 //ANSI color codes
 #define RESET   "\033[0m"

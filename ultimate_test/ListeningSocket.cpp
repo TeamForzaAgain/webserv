@@ -32,6 +32,7 @@ ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u
 
 ListeningSocket::~ListeningSocket()
 {
+	std::cout <<MAGENTA<< "Distruttore ListeningSocket" <<RESET<< std::endl;
 	close(_fd);
 }
 

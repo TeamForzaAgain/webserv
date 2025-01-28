@@ -4,8 +4,15 @@
 #include <string>
 #include <arpa/inet.h>
 
+
+
+void signalHandler(int signum) {
+    std::cout << "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." << std::endl;
+}
+
 int main()
 {
+	signal(SIGINT, signalHandler);
     // Ottieni il nome dell'utente corrente
     const char* user = std::getenv("USER");
     if (!user) {
@@ -30,11 +37,16 @@ int main()
     {
         serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, "Server8080", basePath + "welcome.html");
         serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, "Server8080_2", basePath + "info.html");
+        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, "Server8080_3", basePath + "info.html");
+        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, "Server8080_4", basePath + "info.html");
+        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, "Server8080_5", basePath + "info.html");
+        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, "Server8080_6", basePath + "info.html");
 
 
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 
         serverManager.run();
+		
     }
     catch (const std::exception &e)
     {
