@@ -31,29 +31,41 @@ std::string Server::genResponse(std::string const &request) const
     }
 
     // Leggi il contenuto del file
+    std::ostringstream contentStream;
+	std::string content;
+    std::ostringstream headerStream;
     std::ifstream file(_htmlPath.c_str());
     if (!file.is_open()) {
-        // Genera una risposta 404 se il file non è trovato
-        response = "HTTP/1.1 404 Not Found\r\n";
-        response += "Content-Type: text/html\r\n";
-        response += "Content-Length: 45\r\n";
-        response += "\r\n";
-        response += "<!DOCTYPE html><html><body>Page Not Found</body></html>";
+        // Genera una risposta 404 se il file non è trovato con il file default404.html
+		file.open("./html/default404.html");
+		if (!file.is_open()) {
+			throw std::runtime_error("File non trovato e file di default non trovato.");
+		}
+
+		contentStream << file.rdbuf();
+		file.close();
+		content = contentStream.str();
+
+		// Genera l'header HTTP
+		headerStream << "HTTP/1.1 404 Not Found\r\n";
+		headerStream << "Content-Type: text/html\r\n";
+		headerStream << "Content-Length: " << content.size() << "\r\n";
+		headerStream << "\r\n";
+
+		response = headerStream.str() + content;
         return response;
     }
 
     // Leggi il contenuto del file in una stringa
-    std::ostringstream contentStream;
     contentStream << file.rdbuf();
     file.close();
-    std::string content = contentStream.str();
+    content = contentStream.str();
 
     // Genera l'header HTTP
-    std::ostringstream headerStream;
     headerStream << "HTTP/1.1 200 OK\r\n";
     headerStream << "Content-Type: text/html\r\n";
     headerStream << "Content-Length: " << content.size() << "\r\n";
-    headerStream << "\r\n"; // Separatore tra header e corpo
+    headerStream << "\r\n";
 
     // Combina l'header e il contenuto
     response = headerStream.str() + content;

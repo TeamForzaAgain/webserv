@@ -9,6 +9,14 @@ ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u
 		throw ListeningSocketException();
 	}
 
+	int opt = 1;
+    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+    {
+        perror("Errore nell'impostazione di SO_REUSEADDR");
+        close(_fd);
+        throw ListeningSocketException();
+    }
+
 	_address.sin_family = domain;
 	_address.sin_port = htons(port);
 	_address.sin_addr.s_addr = htonl(interface);
