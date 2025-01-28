@@ -2,8 +2,9 @@
 #define LISTENINGSOCKET_HPP
 
 #include "Include.hpp"
+#include "Socket.hpp"
 
-class ListeningSocket
+class ListeningSocket : public Socket
 {
 	public:
 		ListeningSocket(int domain, int type, int protocol, int port, u_long interface);
@@ -20,7 +21,6 @@ class ListeningSocket
 		};
 
 	private:
-		int _fd;
 		int _port;
 		u_long _interface;
 		struct sockaddr_in _address;

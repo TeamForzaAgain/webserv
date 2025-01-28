@@ -1,16 +1,13 @@
 #include "ListeningSocket.hpp"
 
-ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u_long interface)
+ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u_long interface) :
+	Socket(socket(domain, type, protocol)), _port(port), _interface(interface)
 {
-	_fd = socket(domain, type, protocol);
 	if (_fd == -1)
 	{
 		perror(strerror(errno));
 		throw ListeningSocketException();
 	}
-
-	_port = port;
-	_interface = interface;
 
 	_address.sin_family = domain;
 	_address.sin_port = htons(port);
@@ -28,12 +25,12 @@ ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u
 		perror(strerror(errno));
 		throw ListeningSocketException();
 	}
+
+	setNonBlockingFd();
 }
 
 ListeningSocket::~ListeningSocket()
-{
-	close(_fd);
-}
+{}
 
 int ListeningSocket::getFd() const
 {

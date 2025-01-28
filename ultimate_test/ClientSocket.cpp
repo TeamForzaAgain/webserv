@@ -1,15 +1,10 @@
 #include "ServerManager.hpp"
 
-ClientSocket::ClientSocket(int fd, Server const *server) : _fd(fd), _server(server)
-{
-	_response = "ClientSocket response " + std::to_string(fd);
-    _keepAlive = false;
-}
+ClientSocket::ClientSocket(int fd, Server const *server) : Socket(fd), _server(server), _keepAlive(false)
+{}
 
 ClientSocket::~ClientSocket()
-{
-	close(_fd);
-}
+{}
 
 int ClientSocket::getFd() const
 {
