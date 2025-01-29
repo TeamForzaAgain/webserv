@@ -13,6 +13,7 @@ class Server
 
 		std::string getServerName() const;
 		Server const *getServer() const;
+		ListeningSocket *getListeningSocket() const;
 		bool operator<(const Server &other) const;
 
 	private:

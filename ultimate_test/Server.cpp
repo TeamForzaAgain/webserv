@@ -17,6 +17,11 @@ Server const *Server::getServer() const
     return this;
 }
 
+ListeningSocket *Server::getListeningSocket() const
+{
+    return _ls;
+}
+
 bool Server::operator<(const Server &other) const
 {
     return _serverName < other._serverName;
