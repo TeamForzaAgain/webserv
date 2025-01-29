@@ -2,10 +2,10 @@
 
 NAME = webserv
 
-SRCS = main.cpp ServerManager.cpp Server.cpp ListeningSocket.cpp ClientSocket.cpp Socket.cpp
+SRCS = *.cpp errorResponses/*.cpp
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I.
 
 all: $(NAME)
 

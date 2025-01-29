@@ -26,7 +26,6 @@ int main()
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 
         serverManager.run();
-		
     }
     catch (const std::exception &e)
     {
