@@ -19,7 +19,6 @@ Server const *Server::getServer() const
 
 bool Server::operator<(const Server &other) const
 {
-    // Puoi decidere come ordinare i server. Ecco un esempio basato sul nome del server:
     return _serverName < other._serverName;
 }
 
@@ -34,7 +33,7 @@ std::string Server::genResponse(std::string const &request) const
 	if (request.find("GET") == std::string::npos)
 		throw std::runtime_error("Solo richieste GET sono supportate.");
 	if (!file.is_open())
-        return response404();
+        return response500();
 
     contentStream << file.rdbuf();
     file.close();
