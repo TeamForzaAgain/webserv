@@ -5,37 +5,19 @@ ServerManager::ServerManager() : _activeLs(0)
 
 ServerManager::~ServerManager()
 {
-    bool alreadyDeletedLs = false;
+    std::cout << "Distruttore ServerManager" << std::endl;
+    _pollfds.clear();
 
-	std::cout << "Distruttore ServerManager" << std::endl;
-	_pollfds.clear();
-	if (!_clientSockets.empty())
-	{
-		for (std::map<int, ClientSocket *>::iterator it = _clientSockets.begin(); it != _clientSockets.end(); ++it)
-		{
-			delete it->second;
-			it->second = NULL;
-		}
-		_clientSockets.clear();
-	}
-	if (!_servers.empty())
-	{
-		for (std::map<Server, ListeningSocket*>::iterator it = _servers.begin(); it != _servers.end(); ++it)
-		{
-			alreadyDeletedLs = false;
-			for (std::map<Server, ListeningSocket*>::iterator check = _servers.begin(); check != it; ++check)
-			{
-				if (check->second == it->second)
-				{
-					alreadyDeletedLs = true;
-					break;
-				}
-			}
-			if (!alreadyDeletedLs)
-				delete it->second;
-		}
-		_servers.clear();
-	}
+    // Distruggere tutti i ClientSocket
+    for (std::map<int, ClientSocket *>::iterator it = _clientSockets.begin(); it != _clientSockets.end(); ++it)
+    {
+        delete it->second;
+        it->second = NULL;
+    }
+    _clientSockets.clear();
+
+    _servers.clear(); // Distrugge tutti i Server
+    _listeningSockets.clear(); // Distrugge tutte le ListeningSocket
 }
 
 void ServerManager::addPollFd(int fd)
@@ -48,31 +30,34 @@ void ServerManager::addPollFd(int fd)
 }
 
 void ServerManager::newServer(int domain, int type, int protocol, int port, u_long interface,
-                                const std::string& serverName = "default", std::string const &htmlPath = "/html/welcome.html")
+                              const std::string& serverName, const std::string& htmlPath)
 {
-	for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+    // Controlla se esiste già una ListeningSocket per questa porta e indirizzo
+    for (size_t i = 0; i < _listeningSockets.size(); i++)
     {
-        ListeningSocket *ls = it->second;
+        ListeningSocket &ls = _listeningSockets[i];
 
-        // Caso 1: La socket ha lo stesso indirizzo e porta o esiste già una socket che ascolta su INADDR_ANY
-        if (ls->getPort() == port && (ls->getInterface() == interface || ls->getInterface() == INADDR_ANY))
+        if (ls.getPort() == port && (ls.getInterface() == interface || ls.getInterface() == INADDR_ANY))
         {
-            _servers.insert(std::make_pair(Server(ls, serverName, htmlPath), ls));
-            std::cout << "Nuovo server creato, nome "<< serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
+            _servers.push_back(Server(&ls, serverName, htmlPath));
+            std::cout << "Nuovo server creato, nome " << serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
             return;
         }
     }
 
-    // Se non esiste una socket compatibile, creane una nuova
-    ListeningSocket *newLs = new ListeningSocket(domain, type, protocol, port, interface);
+    // Creiamo una nuova ListeningSocket perché non ne esiste una adatta
+    _listeningSockets.push_back(ListeningSocket(domain, type, protocol, port, interface));
     _activeLs++;
-    _servers.insert(std::make_pair(Server(newLs, serverName, htmlPath), newLs));
 
-    // Aggiungi la nuova ListeningSocket al poll
-    addPollFd(newLs->getFd());
+    // Creiamo un nuovo server con la nuova ListeningSocket
+    _servers.push_back(Server(&_listeningSockets.back(), serverName, htmlPath));
 
-	std::cout << "Nuovo server creato, nome "<< serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
+    // Aggiungiamo la nuova socket al poll
+    addPollFd(_listeningSockets.back().getFd());
+
+    std::cout << "Nuovo server creato, nome " << serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
 }
+
 
 void ServerManager::newClient(int fd, Server const *server)
 {
@@ -95,13 +80,19 @@ void ServerManager::registerClient(size_t i)
 
     // Trova il Server associato alla ListeningSocket
     Server const *server = NULL;
-    for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+    for (size_t j = 0; j < _servers.size(); j++)
     {
-        if (it->second->getFd() == _pollfds[i].fd)
+        if (_servers[j].getListeningSocket()->getFd() == _pollfds[i].fd)
         {
-            server = &(it->first);
+            server = &_servers[j];
             break;
         }
+    }
+    if (!server)
+    {
+        std::cerr << "Errore: nessun server trovato per la socket " << _pollfds[i].fd << std::endl;
+        close(newSocket);
+        return;
     }
 
     newClient(newSocket, server);
@@ -161,7 +152,7 @@ void ServerManager::writeClient(size_t &i)
     int bytesSent = send(_pollfds[i].fd, response.c_str(), response.size(), 0);
     if (bytesSent == -1)
     {
-        perror("send error");
+        perror(strerror(errno));
         return;
     }
 
@@ -215,17 +206,18 @@ void ServerManager::run()
 Server const *ServerManager::findServerByHost(const std::string& host, Server const *currentServer)
 {
     if (!currentServer)
-        return NULL; // **Errore: non abbiamo un server di riferimento!**
+        return NULL; // Errore: nessun server attuale
 
-    ListeningSocket* listeningSocket = _servers[*currentServer]; // Otteniamo la ListeningSocket attuale
+    ListeningSocket* listeningSocket = currentServer->getListeningSocket(); // Otteniamo la ListeningSocket attuale
 
-    for (std::map<Server, ListeningSocket *>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+    for (size_t i = 0; i < _servers.size(); i++)
     {
-        // **Trova un server con lo stesso nome e la stessa ListeningSocket**
-        if (it->first.getServerName() == host && it->second == listeningSocket)
-            return it->first.getServer();
+        // Controlliamo se il nome del server corrisponde e se usa la stessa ListeningSocket
+        if (_servers[i].getServerName() == host && _servers[i].getListeningSocket() == listeningSocket)
+            return &_servers[i];
     }
-    return NULL; // **Nessun server trovato**
+
+    return NULL; // Nessun server trovato
 }
 
 const char *ServerManager::ServerManagerException::what() const throw()

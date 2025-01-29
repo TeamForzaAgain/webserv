@@ -28,8 +28,9 @@ class ServerManager
 
 	private:
 
+		std::vector<Server> _servers;
+		std::vector<ListeningSocket> _listeningSockets;
 		std::vector<struct pollfd> _pollfds;
-		std::map<Server, ListeningSocket *> _servers;
 		size_t _activeLs;
 		std::map<int, ClientSocket *> _clientSockets;
 
