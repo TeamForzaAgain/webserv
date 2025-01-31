@@ -1,8 +1,5 @@
 #include "ServerManager.hpp"
-#include <iostream>
-#include <cstdlib>
-#include <string>
-#include <arpa/inet.h>
+#include "Include.hpp"
 
 void signalHandler(int signum) {
     std::cout << "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." << std::endl;

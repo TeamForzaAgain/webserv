@@ -17,11 +17,13 @@
 #include <poll.h>
 #include <map>
 #include <fstream>
-#include <sstream>
 #include <fcntl.h>
 #include <csignal>
 #include <arpa/inet.h>
 #include <set>
+#include <cstdlib>
+
+
 
 //ANSI color codes
 #define RESET   "\033[0m"
@@ -36,7 +38,7 @@ struct Route
 {
     std::string path;                    // "/images", "/upload", "/" (default)
     std::string rootDirectory;           // "/var/www/site1"
-    bool directoryListing;               // true → mostra il contenuto della directory se non c'è un default file
+    bool directoryListing;               // true → mostra il contenuto della directory se non c'è un default f ile
     std::vector<std::string> defaultFiles; // {"index.html", "index.htm", "default.html"}
     std::set<std::string> allowedMethods; // {"GET", "POST", "DELETE"}
     std::string cgiHandler;              // "/usr/bin/php-cgi" (gestore CGI)

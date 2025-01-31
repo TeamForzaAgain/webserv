@@ -38,7 +38,7 @@ std::string Server::genResponse(std::string const &request) const
 	if (request.find("GET") == std::string::npos)
 		throw std::runtime_error("Solo richieste GET sono supportate.");
 	if (!file.is_open())
-        return response500();
+        return response404();
 
     contentStream << file.rdbuf();
     file.close();
