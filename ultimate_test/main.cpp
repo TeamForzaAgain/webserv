@@ -24,6 +24,8 @@ ServerConfig fillServer1()
 	route.indexes = {"welcome.html"};
 	route.allowedMethods = {"GET"};
 	serverConfig.routes.push_back(route);
+
+	return serverConfig;
 }
 
 ServerConfig fillServer2()
@@ -45,6 +47,8 @@ ServerConfig fillServer2()
 	route.indexes = {"index.html"};
 	route.allowedMethods = {"GET"};
 	serverConfig.routes.push_back(route);
+
+	return serverConfig;
 }
 
 int main()
@@ -56,9 +60,9 @@ int main()
     try
     {
 		ServerConfig serverConfig = fillServer1();
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, "Server8080", "./html/welcome.html");
+        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, serverConfig);
 		ServerConfig serverConfig = fillServer2();
-		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, "Server8080_2", "./html/info.html");
+		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, serverConfig);
     
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 

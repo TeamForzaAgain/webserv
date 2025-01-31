@@ -1,8 +1,12 @@
 #include "Server.hpp"
 #include "errorResponses.hpp"
 
-Server::Server(ListeningSocket *ls, std::string const &serverName, std::string const &htmlPath) : _ls(ls), _serverName(serverName), _htmlPath(htmlPath)
+Server::Server(ListeningSocket *ls, ServerConfig const &serverConfig) : 
+                _ls(ls), _serverName(serverConfig.serverName), _defaultRoute(serverConfig.defaultRoute), 
+                _routes(serverConfig.routes), _errorPages(serverConfig.errorPages)
 {}
+
+
 
 Server::~Server()
 {}

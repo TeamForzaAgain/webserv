@@ -7,7 +7,7 @@
 class Server
 {
 	public:
-		Server(ListeningSocket *ls, std::string const &serverName, std::string const &htmlPath);
+		Server(ListeningSocket *ls, ServerConfig const &serverConfig);
 		~Server();
 		std::string genResponse(std::string const &request) const;
 
@@ -19,7 +19,10 @@ class Server
 	private:
 		ListeningSocket *_ls;
 		std::string _serverName;
-		std::string _htmlPath;
+		Route _defaultRoute;
+		std::vector<Route> _routes;
+		std::map<int, std::string> _errorPages;
+		
 };
 
 #endif
