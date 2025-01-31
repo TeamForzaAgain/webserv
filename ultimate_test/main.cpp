@@ -5,6 +5,48 @@ void signalHandler(int signum) {
     std::cout << "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." << std::endl;
 }
 
+ServerConfig fillServer1()
+{
+	ServerConfig serverConfig;
+
+	serverConfig.serverName = "Server1";
+
+	serverConfig.defaultRoute.location = "";
+	serverConfig.defaultRoute.rootDirectory = "./";
+	serverConfig.defaultRoute.directoryListing = true;
+	serverConfig.defaultRoute.indexes = {};
+	serverConfig.defaultRoute.allowedMethods = {"GET"};
+
+	Route route;
+	route.location = "/test/";
+    route.rootDirectory = "";
+	route.directoryListing = true;
+	route.indexes = {"welcome.html"};
+	route.allowedMethods = {"GET"};
+	serverConfig.routes.push_back(route);
+}
+
+ServerConfig fillServer2()
+{
+	ServerConfig serverConfig;
+
+	serverConfig.serverName = "Server2";
+
+	serverConfig.defaultRoute.location = "";
+	serverConfig.defaultRoute.rootDirectory = "./";
+	serverConfig.defaultRoute.directoryListing = true;
+	serverConfig.defaultRoute.indexes = {};
+	serverConfig.defaultRoute.allowedMethods = {"GET"};
+
+	Route route;
+	route.location = "/html/";
+    route.rootDirectory = "";
+	route.directoryListing = true;
+	route.indexes = {"index.html"};
+	route.allowedMethods = {"GET"};
+	serverConfig.routes.push_back(route);
+}
+
 int main()
 {
 	signal(SIGINT, signalHandler);
@@ -13,13 +55,11 @@ int main()
 
     try
     {
+		ServerConfig serverConfig = fillServer1();
         serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, "Server8080", "./html/welcome.html");
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, "Server8080_2", "./html/info.html");
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, "Server8080_3", "./html/info.html");
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, "Server8080_4", "./html/info.html");
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, "Server8080_5", "./html/info.html");
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, "Server8080_6", "./html/info.html");
-
+		ServerConfig serverConfig = fillServer2();
+		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, "Server8080_2", "./html/info.html");
+    
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 
         serverManager.run();
