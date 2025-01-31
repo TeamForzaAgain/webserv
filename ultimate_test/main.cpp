@@ -15,7 +15,7 @@ ServerConfig fillServer1()
 	serverConfig.defaultRoute.rootDirectory = "./";
 	serverConfig.defaultRoute.directoryListing = true;
 	serverConfig.defaultRoute.indexes = {};
-	serverConfig.defaultRoute.allowedMethods = {"GET"};
+	serverConfig.defaultRoute.allowedMethods = {};
 
 	Route route;
 	route.location = "/test/";
@@ -36,7 +36,7 @@ ServerConfig fillServer2()
 	serverConfig.defaultRoute.rootDirectory = "./";
 	serverConfig.defaultRoute.directoryListing = true;
 	serverConfig.defaultRoute.indexes = {};
-	serverConfig.defaultRoute.allowedMethods = {"GET"};
+	serverConfig.defaultRoute.allowedMethods = {};
 
 	Route route;
 	route.location = "/html/";
