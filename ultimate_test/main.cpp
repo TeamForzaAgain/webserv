@@ -16,11 +16,12 @@ ServerConfig fillServer1()
 	serverConfig.defaultRoute.directoryListing = true;
 
 	Route route;
-	route.location = "/test/";
-    route.rootDirectory = "";
+	route.location = "/html/";
+    route.rootDirectory = "./";
 	route.directoryListing = true;
-	route.indexes.push_back("index.html");
-	route.allowedMethods.GET = true;
+	route.alias = false;
+	route.indexes.push_back("info.html");
+	route.allowedMethods = (Methods){true, false, false};
 	serverConfig.routes.push_back(route);
 	return serverConfig;
 }
@@ -40,7 +41,7 @@ ServerConfig fillServer2()
     route.rootDirectory = "";
 	route.directoryListing = true;
 	route.indexes.push_back("index.html");
-	route.allowedMethods.GET = true;
+	route.allowedMethods = (Methods){true, false, false};
 	route.alias = false;
 	serverConfig.routes.push_back(route);
 	return serverConfig;
@@ -57,7 +58,7 @@ int main()
 		ServerConfig serverConfig = fillServer1();
         serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, serverConfig);
 		ServerConfig serverConfig2 = fillServer2();
-		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, serverConfig2);
+		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, serverConfig2);
     
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 
