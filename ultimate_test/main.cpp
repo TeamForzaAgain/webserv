@@ -14,16 +14,15 @@ ServerConfig fillServer1()
 	serverConfig.defaultRoute.location = "";
 	serverConfig.defaultRoute.rootDirectory = "./";
 	serverConfig.defaultRoute.directoryListing = true;
-	serverConfig.defaultRoute.indexes = {};
-	serverConfig.defaultRoute.allowedMethods = {};
 
 	Route route;
 	route.location = "/test/";
     route.rootDirectory = "";
 	route.directoryListing = true;
-	route.indexes = {"welcome.html"};
-	route.allowedMethods = {"GET"};
+	route.indexes.push_back("index.html");
+	route.allowedMethods.GET = true;
 	serverConfig.routes.push_back(route);
+	return serverConfig;
 }
 
 ServerConfig fillServer2()
@@ -35,16 +34,16 @@ ServerConfig fillServer2()
 	serverConfig.defaultRoute.location = "";
 	serverConfig.defaultRoute.rootDirectory = "./";
 	serverConfig.defaultRoute.directoryListing = true;
-	serverConfig.defaultRoute.indexes = {};
-	serverConfig.defaultRoute.allowedMethods = {};
 
 	Route route;
 	route.location = "/html/";
     route.rootDirectory = "";
 	route.directoryListing = true;
-	route.indexes = {"index.html"};
-	route.allowedMethods = {"GET"};
+	route.indexes.push_back("index.html");
+	route.allowedMethods.GET = true;
+	route.alias = false;
 	serverConfig.routes.push_back(route);
+	return serverConfig;
 }
 
 int main()
@@ -56,9 +55,9 @@ int main()
     try
     {
 		ServerConfig serverConfig = fillServer1();
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, "Server8080", "./html/welcome.html");
-		ServerConfig serverConfig = fillServer2();
-		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, "Server8080_2", "./html/info.html");
+        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, serverConfig);
+		ServerConfig serverConfig2 = fillServer2();
+		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, serverConfig2);
     
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 

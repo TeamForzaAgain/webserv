@@ -7,7 +7,7 @@
 class Server
 {
 	public:
-		Server(ListeningSocket *ls, std::string const &serverName, std::string const &htmlPath);
+		Server(ListeningSocket *ls, ServerConfig const &serverConfig);
 		~Server();
 		std::string genResponse(std::string const &request) const;
 
@@ -17,9 +17,13 @@ class Server
 		bool operator<(const Server &other) const;
 
 	private:
-		ListeningSocket *_ls;
-		std::string _serverName;
-		std::string _htmlPath;
+		ListeningSocket				*_ls;
+		std::string					_serverName;
+		std::string					_defRoute;
+		std::vector<std::string>	_defIndexes;
+		bool 						_defDirListing;
+		std::vector<Route>			_routes;
+
 };
 
 #endif

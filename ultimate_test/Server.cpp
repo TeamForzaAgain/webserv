@@ -1,8 +1,14 @@
 #include "Server.hpp"
 #include "errorResponses.hpp"
 
-Server::Server(ListeningSocket *ls, std::string const &serverName, std::string const &htmlPath) : _ls(ls), _serverName(serverName), _htmlPath(htmlPath)
-{}
+Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls)
+{
+	_serverName = serverconfig.serverName;
+	_defRoute = serverconfig.defaultRoute.rootDirectory;
+	_defIndexes = serverconfig.defaultRoute.indexes;
+	_defDirListing = serverconfig.defaultRoute.directoryListing;
+	_routes = serverconfig.routes;
+}
 
 Server::~Server()
 {}
@@ -27,13 +33,19 @@ bool Server::operator<(const Server &other) const
     return _serverName < other._serverName;
 }
 
+// std::string Server::buildFilePath(std::string const &request) const
+// {
+	
+// 	return "";
+// }
+
 std::string Server::genResponse(std::string const &request) const
 {
 	std::string response;
 	std::ostringstream contentStream;
 	std::string content;
 	std::ostringstream headerStream;
-	std::ifstream file(_htmlPath.c_str());
+	std::ifstream file("./html/index.html");
 
 	if (request.find("GET") == std::string::npos)
 		throw std::runtime_error("Solo richieste GET sono supportate.");

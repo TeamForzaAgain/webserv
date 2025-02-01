@@ -33,6 +33,13 @@
 #define BLUE    "\033[34m"      /* Blue */
 #define MAGENTA "\033[35m"      /* Magenta */
 
+struct Methods
+{
+	bool GET;
+	bool POST;
+	bool DELETE;
+};
+
 // Definizione della struttura Route (location)
 struct Route
 {
@@ -40,7 +47,8 @@ struct Route
     std::string rootDirectory;           // "/var/www/site1"
     bool directoryListing;               // true → mostra il contenuto della directory se non c'è un default f ile
     std::vector<std::string> indexes; // {"index.html", "index.htm", "default.html"}
-    std::set<std::string> allowedMethods; // {"GET", "POST", "DELETE"}
+    Methods allowedMethods; // {"GET", "POST", "DELETE"}
+	bool alias; // true → se la location è un alias
 };
 
 // Definizione della struttura ServerConfig (server {})

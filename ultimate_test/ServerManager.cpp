@@ -33,7 +33,7 @@ void ServerManager::addPollFd(int fd)
 }
 
 void ServerManager::newServer(int domain, int type, int protocol, int port, u_long interface,
-                              const std::string& serverName, const std::string& htmlPath)
+                              ServerConfig const &serverConfig)
 {
     // Controlla se esiste già una ListeningSocket per questa porta e indirizzo
     for (size_t i = 0; i < _listeningSockets.size(); i++)
@@ -42,8 +42,8 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
 
         if (ls->getPort() == port && (ls->getInterface() == interface || ls->getInterface() == INADDR_ANY))
         {
-            _servers.push_back(Server(ls, serverName, htmlPath));
-            std::cout << "Nuovo server creato, nome " << serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
+            _servers.push_back(Server(ls, serverConfig));
+            std::cout << "Nuovo server creato, nome " << serverConfig.serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
             return;
         }
     }
@@ -53,12 +53,12 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     _activeLs++;
 
     // Creiamo un nuovo server con la nuova ListeningSocket
-    _servers.push_back(Server(_listeningSockets.back(), serverName, htmlPath));
+    _servers.push_back(Server(_listeningSockets.back(), serverConfig));
 
     // Aggiungiamo la nuova socket al poll
     addPollFd(_listeningSockets.back()->getFd());
 
-    std::cout << "Nuovo server creato, nome " << serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
+    std::cout << "Nuovo server creato, nome " << serverConfig.serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
 }
 
 void ServerManager::newClient(int fd, Server const *server)
