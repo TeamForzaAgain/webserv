@@ -57,7 +57,7 @@ int main()
 		ServerConfig serverConfig = fillServer1();
         serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, serverConfig);
 		ServerConfig serverConfig2 = fillServer2();
-		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, serverConfig2);
+		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, serverConfig2);
     
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 

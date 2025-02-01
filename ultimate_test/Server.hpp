@@ -16,6 +16,8 @@ class Server
 		ListeningSocket *getListeningSocket() const;
 		bool operator<(const Server &other) const;
 
+		std::string buildFilePath(std::string const &request) const;
+
 	private:
 		ListeningSocket				*_ls;
 		std::string					_serverName;
