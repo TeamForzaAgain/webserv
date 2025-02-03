@@ -50,6 +50,7 @@ struct Route
     std::vector<std::string> indexes; // {"index.html", "index.htm", "default.html"}
     Methods allowedMethods; // {"GET", "POST", "DELETE"}
 	bool alias; // true → se la location è un alias
+	std::map<int, std::string> errorPages; // {404 -> "custom_404.html"}
 };
 
 // Definizione della struttura ServerConfig (server {})
@@ -58,7 +59,7 @@ struct ServerConfig
     std::string serverName;              // Nome del server (es. "example.com")
     Route defaultRoute;                   // Route Generale (se nessuna Route Specifica è trovata)
     std::vector<Route> routes;            // Rotte specifiche (location {})
-    std::map<int, std::string> errorPages; // {404 -> "custom_404.html"}
+    std::map<int, std::string> rootErrorPagesPath; // {404 -> "custom_404.html"}
 };
 
 struct HttpRequest

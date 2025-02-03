@@ -8,14 +8,14 @@ class Server
 {
 	public:
 		Server(ListeningSocket *ls, ServerConfig const &serverConfig);
-		~Server();
+		~Server() {};
+
+		std::string getServerName() const { return _serverName; }
+		Server const *getServer() const { return this; }
+		ListeningSocket *getListeningSocket() const { return _ls; }
+		bool operator<(const Server &other) const { return _serverName < other._serverName; }
+
 		std::string genResponse(std::string const &request) const;
-
-		std::string getServerName() const;
-		Server const *getServer() const;
-		ListeningSocket *getListeningSocket() const;
-		bool operator<(const Server &other) const;
-
 		std::string buildFilePath(std::string const &request) const;
 
 	private:

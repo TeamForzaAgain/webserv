@@ -10,29 +10,6 @@ Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls)
 	_routes = serverconfig.routes;
 }
 
-Server::~Server()
-{}
-
-std::string Server::getServerName() const
-{
-    return _serverName;
-}
-
-Server const *Server::getServer() const
-{
-    return this;
-}
-
-ListeningSocket *Server::getListeningSocket() const
-{
-    return _ls;
-}
-
-bool Server::operator<(const Server &other) const
-{
-    return _serverName < other._serverName;
-}
-
 // Rimuove gli slash iniziali e finali da una stringa
 // Rimuove lo slash finale se presente
 std::string removeTrailingSlash(const std::string& path)
@@ -57,7 +34,7 @@ std::string joinPaths(const std::string& root, const std::string& path)
     return removeTrailingSlash(root) + "/" + removeLeadingSlash(path);
 }
 
-
+ 
 std::string Server::buildFilePath(std::string const &request) const
 {
 	std::string requestLine = request.substr(0, request.find("\r\n"));
@@ -114,6 +91,7 @@ std::string Server::genResponse(std::string const &request) const
 	std::string targetPath = buildFilePath(request);
 	std::ifstream file;
 	std::string indexPath;
+
 	for (std::vector<std::string>::const_iterator it = _defIndexes.begin(); it != _defIndexes.end(); ++it)
 	{
 		indexPath = targetPath + *it;
