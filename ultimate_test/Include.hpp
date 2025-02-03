@@ -61,4 +61,24 @@ struct ServerConfig
     std::map<int, std::string> errorPages; // {404 -> "custom_404.html"}
 };
 
+struct HttpRequest
+{
+    std::string method;                       // "GET", "POST", "DELETE"
+    std::string path;                         // "/index.html"
+    std::map<std::string, std::string> headers; // "Host", "User-Agent", "Content-Length"
+    std::string body;                         // Contenuto del body (solo per POST/PUT)
+
+    void fromString(const std::string &request); // Converte la richiesta in stringa HTTP
+};
+
+struct HttpResponse
+{
+    int statusCode;                          // 200, 404, 500, etc.
+    std::string statusMessage;               // "OK", "Not Found", "Internal Server Error"
+    std::map<std::string, std::string> headers; // "Content-Type", "Content-Length"
+    std::string body;                         // Contenuto della risposta
+
+    std::string toString() const; // Converte la risposta in stringa HTTP
+};
+
 #endif
