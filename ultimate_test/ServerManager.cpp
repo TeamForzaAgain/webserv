@@ -124,7 +124,6 @@ void ServerManager::readClient(size_t &i)
         closeClient(i);
         return;
     }
-
     if (bytesRead == -1)
     {
         perror("recv error");
@@ -133,18 +132,13 @@ void ServerManager::readClient(size_t &i)
 
     tempBuffer[bytesRead] = '\0';
     _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer);
-
-    // Se la richiesta è completa, genera la risposta
-    if (_clientSockets[_pollfds[i].fd]->parseEndMessage())
-    {
-        std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
-        _clientSockets[_pollfds[i].fd]->genResponse(*this);
+    std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
+    int requestStatus = _clientSockets[_pollfds[i].fd]->genResponse(*this);
+    if (requestStatus == 1)
         _pollfds[i].events = POLLOUT;
-    }
     else
-    {
-        std::cout << YELLOW << "Not ended Buffer: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
-    }
+        _pollfds[i].events = POLLIN;
+
 }
 
 void ServerManager::writeClient(size_t &i)
