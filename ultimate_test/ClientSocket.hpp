@@ -18,8 +18,7 @@ class ClientSocket : public Socket
 		void addBuffer(const char *buffer);
 
 		int parseEndMessage();
-		void parseHostConnection(ServerManager &serverManager, const std::string &request);
-		void genResponse(ServerManager &serverMenager);
+		int genResponse(ServerManager &serverMenager);
 		std::string getBuffer() const;
 		std::string getResponse() const;
 		bool getKeepAlive() const;
@@ -27,6 +26,7 @@ class ClientSocket : public Socket
 	private:
 		int _fd;
 		std::vector<char> _buffer;
+		HttpRequest _request;
 		std::string _response;
 		Server const *_server;
 		bool _keepAlive;

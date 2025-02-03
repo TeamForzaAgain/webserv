@@ -33,6 +33,7 @@
 #define BLUE    "\033[34m"      /* Blue */
 #define MAGENTA "\033[35m"      /* Magenta */
 #define CYAN    "\033[36m"      /* Cyan */
+#define ORANGE  "\033[38;5;208m" /* Orange */
 
 struct Methods
 {
@@ -69,7 +70,8 @@ struct HttpRequest
     std::map<std::string, std::string> headers; // "Host", "User-Agent", "Content-Length"
     std::string body;                         // Contenuto del body (solo per POST/PUT)
 
-    void fromString(const std::string &request); // Converte la richiesta in stringa HTTP
+    int fromString(const std::string &request); // Converte la richiesta in stringa HTTP
+    void clear();                               // Resetta la richiesta
 };
 
 struct HttpResponse
