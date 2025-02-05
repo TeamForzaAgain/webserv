@@ -1,49 +1,35 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Socket.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/01/09 14:42:32 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/01/09 14:45:18 by tpicchio         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Socket.hpp"
 
-Socket::Socket(int domain, int service, int protocol, int port, unsigned long interface)
+Socket::Socket(int fd) : _fd(fd)
+{}
+
+Socket::~Socket()
 {
-	this->_addr.sin_family = domain;
-	this->_addr.sin_port = htons(port);
-	this->_addr.sin_addr.s_addr = htonl(interface);
-	this->_sock_fd = socket(domain, service, protocol);
-	test_connection(this->_sock_fd);
-	// conn_fd = connect_to_network(sock_fd, addr);
-	// test_connection(conn_fd);
+	close(_fd);
 }
 
-void Socket::test_connection(int fd)
+int Socket::getFd() const
 {
-	if (fd < 0)
-	{
-		std::cerr << "Connection failed" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	return _fd;
 }
 
-struct sockaddr_in Socket::get_addr()
+void Socket::setNonBlockingFd()
 {
-	return this->_addr;
+    int flags = fcntl(_fd, F_GETFL, 0);
+    if (flags == -1)
+    {
+        perror("fcntl error");
+        throw SocketException();
+    }
+
+    if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+    {
+        perror("fcntl error");
+        throw SocketException();
+    }
 }
 
-int Socket::get_conn_fd()
+const char *Socket::SocketException::what() const throw()
 {
-	return this->_conn_fd;
+	return "In SocketException";
 }
-
-int Socket::get_sock_fd()
-{
-	return this->_sock_fd;
-}
-
