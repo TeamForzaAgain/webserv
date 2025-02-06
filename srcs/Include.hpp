@@ -42,25 +42,24 @@ struct Methods
 	bool DELETE;
 };
 
-// Definizione della struttura Route (location)
-struct Route
+// Definizione della struttura Location (location)
+struct Location
 {
-    std::string location;                    // "/images", "/upload", "/" (default)
-    std::string rootDirectory;           // "/var/www/site1"
-    bool directoryListing;               // true → mostra il contenuto della directory se non c'è un default f ile
-    std::vector<std::string> indexes; // {"index.html", "index.htm", "default.html"}
+    std::string path;                    // "/images", "/upload", "/" (default)
+    std::string root;           // "/var/www/site1"
+    bool dirListing;               // true → mostra il contenuto della directory se non c'è un default f ile
+    std::vector<std::string> indexFiles; // {"index.html", "index.htm", "default.html"}
     Methods allowedMethods; // {"GET", "POST", "DELETE"}
-	bool alias; // true → se la location è un alias
+	bool isAlias; // true → se la location è un alias
 	std::map<int, std::string> errorPages; // {404 -> "custom_404.html"}
 };
 
 // Definizione della struttura ServerConfig (server {})
 struct ServerConfig
 {
-    std::string serverName;              // Nome del server (es. "example.com")
-    Route defaultRoute;                   // Route Generale (se nessuna Route Specifica è trovata)
-    std::vector<Route> routes;            // Rotte specifiche (location {})
-    std::map<int, std::string> rootErrorPagesPath; // {404 -> "custom_404.html"}
+    std::string hostName;              // Nome del server (es. "example.com")
+    Location defLocation;                   // Location Generale (se nessuna Location Specifica è trovata)
+    std::vector<Location> locations;            // Rotte specifiche (location {})
 };
 
 struct HttpRequest
@@ -78,8 +77,8 @@ struct HttpResponse
 {
     int statusCode;                          // 200, 404, 500, etc.
     std::string statusMessage;               // "OK", "Not Found", "Internal Server Error"
-    std::map<std::string, std::string> headers; // "Content-Type", "Content-Length"
     std::string body;                         // Contenuto della risposta
+	Location location;								// Location usata per la risposta
 
     std::string toString() const; // Converte la risposta in stringa HTTP
 };

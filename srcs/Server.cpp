@@ -1,13 +1,11 @@
 #include "Server.hpp"
 #include "errorResponses.hpp"
 
-Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls)
+Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls), 
+_hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
+_defIndexFiles(serverconfig.defLocation.indexFiles), _defDirListing(serverconfig.defLocation.dirListing),
+_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations)
 {
-	_serverName = serverconfig.serverName;
-	_defRoute = serverconfig.defaultRoute.rootDirectory;
-	_defIndexes = serverconfig.defaultRoute.indexes;
-	_defDirListing = serverconfig.defaultRoute.directoryListing;
-	_routes = serverconfig.routes;
 }
 
 // Rimuove gli slash iniziali e finali da una stringa
@@ -34,92 +32,108 @@ std::string joinPaths(const std::string& root, const std::string& path)
     return removeTrailingSlash(root) + "/" + removeLeadingSlash(path);
 }
 
- 
-std::string Server::buildFilePath(std::string const &request) const
-{
-	std::string requestLine = request.substr(0, request.find("\r\n"));
-	std::string path = requestLine.substr(requestLine.find(" ") + 1, requestLine.rfind(" ") - requestLine.find(" ") - 1);
-	std::string method = requestLine.substr(0, requestLine.find(" "));
-
-	std::cout <<CYAN<< "\n\nrequestLine: " << requestLine <<RESET<< std::endl;
-	std::cout <<CYAN<< "Method: " << method <<RESET<< std::endl;
-	std::cout <<CYAN<< "Path: " << path <<RESET<<"\n"<< std::endl;
-
-	// cerca un match tra le routes location e il path e rispetta c++98
-	std::string targetPath;
-	for (std::vector<Route>::const_iterator it = _routes.begin(); it != _routes.end(); ++it)
-	{
-		if (path.find(it->location) != std::string::npos)
-		{
-			std::cout <<CYAN<< "Matched location: " << it->location <<RESET<< std::endl;
-			std::cout <<CYAN<< "Root directory: " << it->rootDirectory <<RESET<< std::endl;
-			std::cout <<CYAN<< "Directory listing: " << it->directoryListing <<RESET<< std::endl;
-			std::cout <<CYAN<< "Indexes: " <<RESET<< std::endl;
-			for (std::vector<std::string>::const_iterator it2 = it->indexes.begin(); it2 != it->indexes.end(); ++it2)
-				std::cout <<CYAN<< "  " << *it2 <<RESET<< std::endl;
-			std::cout <<CYAN<< "Allowed methods: " <<RESET<< std::endl;
-			std::cout <<CYAN<< "  GET: " << it->allowedMethods.GET <<RESET<< std::endl;
-			std::cout <<CYAN<< "  POST: " << it->allowedMethods.POST <<RESET<< std::endl;
-			std::cout <<CYAN<< "  DELETE: " << it->allowedMethods.DELETE <<RESET<< std::endl;
-			std::cout <<CYAN<< "Alias: " << it->alias <<RESET<< std::endl;
-
-			if (!it->rootDirectory.empty())
+/*buildFilePath
+if (!it->root.empty())
 			{
-				if (it->alias)
-					targetPath = joinPaths(it->rootDirectory, path.substr(it->location.size()));
+				if (it->isAlias)
+					targetPath = joinPaths(it->root, request.path.substr(it->path.size()));
 				else
-					targetPath = joinPaths(it->rootDirectory, path);
+					targetPath = joinPaths(it->root, request.path);
 			}
 			else
-				targetPath = joinPaths(_defRoute, path);
-			break;
-		}
-	}
-	//concatena il path con la root directory
+				targetPath = joinPaths(_root, request.path);
+
+//concatena il path con la root directory
 	if (targetPath.empty())
         targetPath = joinPaths(_defRoute, path);
 	std::cout <<CYAN<< "Target path: " << targetPath <<RESET<< std::endl;
-	return targetPath;
-}
+*/
 
-std::string Server::genResponse(std::string const &request) const
+ 
+Location Server::findLocation(HttpRequest const &request) const
 {
-	std::string response;
-	std::ostringstream contentStream;
-	std::string content;
-	std::ostringstream headerStream;
-	std::string targetPath = buildFilePath(request);
-	std::ifstream file;
-	std::string indexPath;
+	const Location* bestMatch = NULL;
+	size_t bestMatchLength = 0;
 
-	for (std::vector<std::string>::const_iterator it = _defIndexes.begin(); it != _defIndexes.end(); ++it)
+	std::cout <<CYAN<< "Method: " << request.method <<RESET<< std::endl;
+	std::cout <<CYAN<< "Path: " << request.path <<RESET<<"\n"<< std::endl;
+	for (std::vector<Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it)
 	{
-		indexPath = targetPath + *it;
-		if (access(indexPath.c_str(), F_OK) != -1)
+		if (request.path.rfind(it->path, 0) == 0) // Verifica se path inizia con it->path
 		{
-			file.open(indexPath.c_str());
-			break;
+			size_t currentMatchLength = it->path.length();
+			if (currentMatchLength > bestMatchLength) // Trova il match più lungo
+			{
+				bestMatch = &(*it);
+				bestMatchLength = currentMatchLength;
+			}
 		}
 	}
+
+	if (bestMatch)
+		return *bestMatch;
+
+	Location defaultLocation;
+	defaultLocation.path = "";
+	defaultLocation.root = _root;
+	defaultLocation.dirListing = _defDirListing;
+	defaultLocation.indexFiles = _defIndexFiles;
+	defaultLocation.allowedMethods = (Methods){true, false, false};
+	defaultLocation.isAlias = false;
+	defaultLocation.errorPages = _errorPages;
+	return defaultLocation;
+}
+
+HttpResponse Server::genGetResponse(HttpRequest const &request) const
+{
+	HttpResponse response;
+	response.location = findLocation(request);
+
+	std::cout <<CYAN<< "Matched location: " << response.location.path <<RESET<< std::endl;
+	std::cout <<CYAN<< "Root directory: " << response.location.root <<RESET<< std::endl;
+	std::cout <<CYAN<< "Directory listing: " << response.location.dirListing <<RESET<< std::endl;
+	std::cout <<CYAN<< "Indexes: " <<RESET<< std::endl;
+	for (std::vector<std::string>::const_iterator it = response.location.indexFiles.begin(); it != response.location.indexFiles.end(); ++it)
+		std::cout <<CYAN<< "  " << *it <<RESET<< std::endl;
+	std::cout <<CYAN<< "Allowed methods: " <<RESET<< std::endl;
+	std::cout <<CYAN<< "  GET: " << response.location.allowedMethods.GET <<RESET<< std::endl;
+	std::cout <<CYAN<< "  POST: " << response.location.allowedMethods.POST <<RESET<< std::endl;
+	std::cout <<CYAN<< "  DELETE: " << response.location.allowedMethods.DELETE <<RESET<< std::endl;
+	std::cout <<CYAN<< "Alias: " << response.location.isAlias <<RESET<< std::endl;
+	// std::string filePath = buildFilePath(request);
+	std::ifstream file("html/test/info.html");
+	std::ostringstream contentStream;
+
 	if (!file.is_open())
 	{
-		indexPath = targetPath + "index.html";
-		if (access(indexPath.c_str(), F_OK) != -1)
-			file.open(indexPath.c_str());
+		response.statusCode = 404;
+		response.statusMessage = "Not Found";
+		file.close();
+		file.open("html/default404.html");
+		contentStream << file.rdbuf();
+		response.body = contentStream.str();
 	}
-		
-	if (!file.is_open())
-        return response404();
+	else
+	{
+		response.statusCode = 200;
+		response.statusMessage = "OK";
+		contentStream << file.rdbuf();
+		response.body = contentStream.str();
+		file.close();
+	}
+	return response;
+}
 
-	//stampa la prima riga di request
+std::string Server::genResponse(HttpRequest const &request) const
+{
+	HttpResponse response;
 
-    contentStream << file.rdbuf();
-    file.close();
-    content = contentStream.str();
-    headerStream << "HTTP/1.1 200 OK\r\n";
-    headerStream << "Content-Type: text/html\r\n";
-    headerStream << "Content-Length: " << content.size() << "\r\n";
-    headerStream << "\r\n";
-    response = headerStream.str() + content;
-    return response;
+	if (request.method == "GET")
+		response = genGetResponse(request);
+	// else if (request.method == "POST")
+	// 	response = genPostResponse(request);
+	// else if (request.method == "DELETE")
+	// 	response = genDeleteResponse(request);
+
+    return response.toString();
 }

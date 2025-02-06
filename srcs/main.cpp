@@ -9,20 +9,29 @@ ServerConfig fillServer1()
 {
 	ServerConfig serverConfig;
 
-	serverConfig.serverName = "Server1";
+	serverConfig.hostName = "Server1";
 
-	serverConfig.defaultRoute.location = "";
-	serverConfig.defaultRoute.rootDirectory = "./";
-	serverConfig.defaultRoute.directoryListing = true;
+	serverConfig.defLocation.path = "";
+	serverConfig.defLocation.root = "/html/";
+	serverConfig.defLocation.dirListing = true;
 
-	Route route;
-	route.location = "/html/";
-    route.rootDirectory = "./";
-	route.directoryListing = true;
-	route.alias = false;
-	route.indexes.push_back("info.html");
-	route.allowedMethods = (Methods){true, false, false};
-	serverConfig.routes.push_back(route);
+	Location location;
+	location.path = "/";
+    location.root = "";
+	location.dirListing = true;
+	location.isAlias = false;
+	location.indexFiles.push_back("info.html");
+	location.allowedMethods = (Methods){true, false, false};
+	serverConfig.locations.push_back(location);
+
+	Location location2;
+	location2.path = "/server1/";
+	location2.root = "/html/";
+	location2.dirListing = true;
+	location2.indexFiles.push_back("welcome.html");
+	location2.allowedMethods = (Methods){true, false, false};
+	location2.isAlias = false;
+	serverConfig.locations.push_back(location2);
 	return serverConfig;
 }
 
@@ -30,20 +39,20 @@ ServerConfig fillServer2()
 {
 	ServerConfig serverConfig;
 
-	serverConfig.serverName = "Server2";
+	serverConfig.hostName = "Server2";
 
-	serverConfig.defaultRoute.location = "";
-	serverConfig.defaultRoute.rootDirectory = "./";
-	serverConfig.defaultRoute.directoryListing = true;
+	serverConfig.defLocation.path = "";
+	serverConfig.defLocation.root = "/";
+	serverConfig.defLocation.dirListing = true;
 
-	Route route;
-	route.location = "/html/";
-    route.rootDirectory = "";
-	route.directoryListing = true;
-	route.indexes.push_back("index.html");
-	route.allowedMethods = (Methods){true, false, false};
-	route.alias = false;
-	serverConfig.routes.push_back(route);
+	Location location;
+	location.path = "/server2/";
+    location.root = "/html/";
+	location.dirListing = true;
+	location.indexFiles.push_back("welcome.html");
+	location.allowedMethods = (Methods){true, false, false};
+	location.isAlias = false;
+	serverConfig.locations.push_back(location);
 	return serverConfig;
 }
 
@@ -58,7 +67,7 @@ int main()
 		ServerConfig serverConfig = fillServer1();
         serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, serverConfig);
 		ServerConfig serverConfig2 = fillServer2();
-		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_LOOPBACK, serverConfig2);
+		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, serverConfig2);
     
         std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
 

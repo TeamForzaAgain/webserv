@@ -43,7 +43,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
         if (ls->getPort() == port && (ls->getInterface() == interface || ls->getInterface() == INADDR_ANY))
         {
             _servers.push_back(Server(ls, serverConfig));
-            std::cout << "Nuovo server creato, nome " << serverConfig.serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
+            std::cout << "Nuovo server creato, nome " << serverConfig.hostName << ", IP " << interface << ", porta " << port << "." << std::endl;
             return;
         }
     }
@@ -58,7 +58,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     // Aggiungiamo la nuova socket al poll
     addPollFd(_listeningSockets.back()->getFd());
 
-    std::cout << "Nuovo server creato, nome " << serverConfig.serverName << ", IP " << interface << ", porta " << port << "." << std::endl;
+    std::cout << "Nuovo server creato, nome " << serverConfig.hostName << ", IP " << interface << ", porta " << port << "." << std::endl;
 }
 
 void ServerManager::newClient(int fd, Server const *server)

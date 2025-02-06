@@ -108,7 +108,7 @@ int ClientSocket::genResponse(ServerManager &serverManager)
     }
     if (requestStatus == 1)
     {
-        _response = _server->genResponse(requestString);
+        _response = _server->genResponse(_request);
         _buffer.clear();
         _request.clear();
     }
