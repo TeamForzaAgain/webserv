@@ -265,8 +265,6 @@ std::string Server::genDirListing(std::string const &path, Location const &locat
 	return dirListing;
 }
 
-#include <sys/stat.h>
-
 bool findIndexFile(const std::string &directory, const std::vector<std::string> &indexFiles, std::string &indexContent)
 {
     for (std::vector<std::string>::const_iterator it = indexFiles.begin(); it != indexFiles.end(); ++it)
