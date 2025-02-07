@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <set>
 #include <cstdlib>
+#include <algorithm>
 #include <dirent.h>
 
 
@@ -35,6 +36,10 @@
 #define MAGENTA "\033[35m"      /* Magenta */
 #define CYAN    "\033[36m"      /* Cyan */
 #define ORANGE  "\033[38;5;208m" /* Orange */
+
+#define BUFFERSIZE 1024
+
+#define UPLOAD_DIRECTORY "./uploads/"
 
 struct Methods
 {
@@ -68,9 +73,8 @@ struct HttpRequest
     std::string method;                       // "GET", "POST", "DELETE"
     std::string path;                         // "/index.html"
     std::map<std::string, std::string> headers; // "Host", "User-Agent", "Content-Length"
-    std::string body;                         // Contenuto del body (solo per POST/PUT)
+    std::vector<char> body;                         // Contenuto del body (solo per POST/PUT)
 
-    int fromString(const std::string &request); // Converte la richiesta in stringa HTTP
     void clear();                               // Resetta la richiesta
 };
 

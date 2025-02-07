@@ -15,21 +15,31 @@ class ClientSocket : public Socket
 		~ClientSocket();
 
 		int getFd() const;
-		void addBuffer(const char *buffer);
+		void addBuffer(const char *buffer, int bytesRead);
 
-		int parseEndMessage();
-		int genResponse(ServerManager &serverMenager);
+		int parseRequest(int bytesRead);
+		void genResponse(ServerManager &serverMenager, int bytesRead);
 		std::string getBuffer() const;
 		std::string getResponse() const;
+		int getStatus() const;
 		bool getKeepAlive() const;
 
 	private:
 		int _fd;
+		Server const *_server;
+		int _status;
 		std::vector<char> _buffer;
 		HttpRequest _request;
 		std::string _response;
-		Server const *_server;
 		bool _keepAlive;
+		int _contentLength;
+		int _chunkLength;
+		int _headersLenght;
+		int _bytesParsed;
+		bool _isMultipart;
+		std::string _boundary;
+		std::ofstream _uploadFile;
+		int _bytesWritten;
 
 };
 

@@ -115,8 +115,8 @@ void ServerManager::readClient(size_t &i)
 {
     std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
 
-    char tempBuffer[1024];
-    int bytesRead = recv(_pollfds[i].fd, tempBuffer, sizeof(tempBuffer) - 1, 0);
+    char tempBuffer[BUFFERSIZE];
+    int bytesRead = recv(_pollfds[i].fd, tempBuffer, BUFFERSIZE - 1, 0);
 
     if (bytesRead == 0) // Il client ha chiuso la connessione
     {
@@ -131,14 +131,13 @@ void ServerManager::readClient(size_t &i)
     }
 
     tempBuffer[bytesRead] = '\0';
-    _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer);
+    _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer, bytesRead);
     std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
-    int requestStatus = _clientSockets[_pollfds[i].fd]->genResponse(*this);
-    if (requestStatus == 1)
-        _pollfds[i].events = POLLOUT;
-    else
+    _clientSockets[_pollfds[i].fd]->genResponse(*this, bytesRead);
+    if (_clientSockets[_pollfds[i].fd]->getStatus() == 0)
         _pollfds[i].events = POLLIN;
-
+    else if (_clientSockets[_pollfds[i].fd]->getStatus() == 1 || _clientSockets[_pollfds[i].fd]->getStatus() == -1)
+        _pollfds[i].events = POLLOUT;
 }
 
 void ServerManager::writeClient(size_t &i)
