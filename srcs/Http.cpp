@@ -1,6 +1,6 @@
 #include "Include.hpp"
 
-int HttpRequest::fromString(const std::string &request)
+/* int HttpRequest::fromString(const std::string &request)
 {
     std::istringstream requestStream(request);
     std::string line;
@@ -87,7 +87,7 @@ int HttpRequest::fromString(const std::string &request)
 
     // Se non c'è né `Content-Length` né `Transfer-Encoding`, la richiesta è completa
     return 1;
-}
+} */
 
 void HttpRequest::clear()
 {

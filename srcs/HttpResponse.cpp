@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/03 17:09:44 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/05 14:50:43 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/05 20:02:03 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Include.hpp"
 
-HttpResponse genResponse(int statusCode, ServerConfig const &serverConfig, Route const &route)
+/* HttpResponse genResponse(int statusCode, ServerConfig const &serverConfig, Route const &route)
 {
 	HttpResponse response;
 
@@ -23,3 +23,4 @@ HttpResponse genResponse(int statusCode, ServerConfig const &serverConfig, Route
 
 	return response;
 }
+ */
