@@ -1,13 +1,47 @@
 #include "Server.hpp"
 #include "errorResponses.hpp"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls)
+Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls), 
+_hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
+_defIndexFiles(serverconfig.defLocation.indexFiles), _defDirListing(serverconfig.defLocation.dirListing),
+_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations)
+{}
+
+Location Server::findLocation(HttpRequest const &request) const
 {
-	_serverName = serverconfig.serverName;
-	_defRoute = serverconfig.defaultRoute.rootDirectory;
-	_defIndexes = serverconfig.defaultRoute.indexes;
-	_defDirListing = serverconfig.defaultRoute.directoryListing;
-	_routes = serverconfig.routes;
+	const Location* bestMatch = NULL;
+	size_t bestMatchLength = 0;
+
+	std::cout <<CYAN<< "Method: " << request.method <<RESET<< std::endl;
+	std::cout <<CYAN<< "Path: " << request.path <<RESET<<"\n"<< std::endl;
+	for (std::vector<Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it)
+	{
+		if (request.path.rfind(it->path, 0) == 0) // Verifica se path inizia con it->path
+		{
+			size_t currentMatchLength = it->path.length();
+			if (currentMatchLength > bestMatchLength) // Trova il match più lungo
+			{
+				bestMatch = &(*it);
+				bestMatchLength = currentMatchLength;
+			}
+		}
+	}
+
+	if (bestMatch)
+		return *bestMatch;
+
+	Location defaultLocation;
+	defaultLocation.path = "";
+	defaultLocation.root = _root;
+	defaultLocation.dirListing = _defDirListing;
+	defaultLocation.indexFiles = _defIndexFiles;
+	defaultLocation.allowedMethods = (Methods){true, false, false};
+	defaultLocation.isAlias = false;
+	defaultLocation.errorPages = _errorPages;
+	return defaultLocation;
 }
 
 // Rimuove gli slash iniziali e finali da una stringa
@@ -34,92 +68,351 @@ std::string joinPaths(const std::string& root, const std::string& path)
     return removeTrailingSlash(root) + "/" + removeLeadingSlash(path);
 }
 
- 
-std::string Server::buildFilePath(std::string const &request) const
+std::string genDefaultErrorPage(int code, const std::string& message)
 {
-	std::string requestLine = request.substr(0, request.find("\r\n"));
-	std::string path = requestLine.substr(requestLine.find(" ") + 1, requestLine.rfind(" ") - requestLine.find(" ") - 1);
-	std::string method = requestLine.substr(0, requestLine.find(" "));
+    std::ostringstream oss;
+    oss << "<!DOCTYPE html>\n"
+        << "<html lang=\"en\">\n"
+        << "<head>\n"
+        << "    <title>" << code << " " << message << "</title>\n"
+        << "</head>\n"
+        << "<body>\n"
+        << "    <center>\n"
+        << "        <h1>" << code << " " << message << "</h1>\n"
+        << "    </center>\n"
+        << "    <hr>\n"
+        << "    <center>webzerv/TeamForzaAgain</center>\n"
+        << "</body>\n"
+        << "</html>\n";
+    return oss.str();
+}
 
-	std::cout <<CYAN<< "\n\nrequestLine: " << requestLine <<RESET<< std::endl;
-	std::cout <<CYAN<< "Method: " << method <<RESET<< std::endl;
-	std::cout <<CYAN<< "Path: " << path <<RESET<<"\n"<< std::endl;
+std::string Server::genErrorPage(const Location &location, int code, const std::string &message) const
+{
+    std::string filePath;
+    bool hasCustomPage = false;
 
-	// cerca un match tra le routes location e il path e rispetta c++98
+    // Verifica se la location ha una pagina di errore personalizzata
+    std::map<int, std::string>::const_iterator it = location.errorPages.find(code);
+    if (it != location.errorPages.end())
+    {
+        if (!location.root.empty())
+            filePath = joinPaths(location.root, it->second);
+        else
+            filePath = joinPaths(_root, it->second);
+		std::cout <<CYAN<< "Custom error page: " << filePath <<RESET<< std::endl;
+        hasCustomPage = true;
+    }
+    else
+    {
+        // Verifica se il server ha una pagina di errore personalizzata
+        it = _errorPages.find(code);
+        if (it != _errorPages.end())
+        {
+            filePath = joinPaths(_root, it->second);
+            hasCustomPage = true;
+        }
+    }
+
+    if (hasCustomPage)
+    {
+        std::ifstream file(filePath.c_str());
+        if (file.is_open())
+        {
+            std::ostringstream contentStream;
+            contentStream << file.rdbuf();
+            file.close();
+            return contentStream.str();
+        }
+        else
+        {
+            // Se non riesce ad aprire il file personalizzato, usa la pagina di errore predefinita
+            return genDefaultErrorPage(code, message);
+        }
+    }
+    else
+    {
+        // Usa la pagina di errore predefinita
+        return genDefaultErrorPage(code, message);
+    }
+}
+
+// std::string Server::genErrorPage(Location const &location, int code, std::string const &message) const
+// {
+// 	std::string errorPage;
+// 	std::string filePath;
+// 	std::map<int, std::string>::const_iterator it = location.errorPages.find(code);
+
+// 	if (it == location.errorPages.end())
+// 	{
+// 		std::map<int, std::string>::const_iterator it2 = _errorPages.find(code);
+// 		if (it2 == _errorPages.end())
+// 		{
+// 			std::ostringstream oss;
+// 			oss << "<!DOCTYPE html>\n"
+// 			<< "<html lang=\"en\">\n"
+// 			<< "<head>\n"
+// 			<< "	<title>" << code << " " << message << "</title>\n"
+// 			<< "</head>\n"
+// 			<< "<body>\n"
+// 			<< "	<center>\n"
+// 			<< "		<h1>" << code << " " << message << "</h1>\n"
+// 			<< "	</center>\n"
+// 			<< "	<hr>\n"
+// 			<< "	<center>webzerv/TeamForzaAgain</center>\n"
+// 			<< "</body>\n"
+// 			<< "</html>\n";
+// 			errorPage = oss.str();
+// 			return errorPage;
+// 		}
+// 		else
+// 			filePath = joinPaths(_root, it2->second);
+// 	}
+// 	else if (!location.root.empty())
+// 		filePath = joinPaths(location.root, it->second);
+// 	else
+// 		filePath = joinPaths(_root, it->second);
+// 	std::ifstream file(filePath.c_str());
+// 	std::ostringstream contentStream;
+
+// 	if (file.is_open())
+// 	{
+// 		contentStream << file.rdbuf();
+// 		errorPage = contentStream.str();
+// 		file.close();
+// 	}
+// 	else
+// 	{
+// 		std::ostringstream oss;
+// 		oss << "<!DOCTYPE html>\n"
+// 			<< "<html lang=\"en\">\n"
+// 			<< "<head>\n"
+// 			<< "	<title>" << code << " " << message << "</title>\n"
+// 			<< "</head>\n"
+// 			<< "<body>\n"
+// 			<< "	<center>\n"
+// 			<< "		<h1>" << code << " " << message << "</h1>\n"
+// 			<< "	</center>\n"
+// 			<< "	<hr>\n"
+// 			<< "	<center>webzerv/TeamForzaAgain</center>\n"
+// 			<< "</body>\n"
+// 			<< "</html>\n";
+// 		errorPage = oss.str();
+// 	}
+// 	return errorPage;
+// }
+
+std::string Server::buildFilePath(HttpRequest const &request, Location const &location) const
+{
 	std::string targetPath;
-	for (std::vector<Route>::const_iterator it = _routes.begin(); it != _routes.end(); ++it)
-	{
-		if (path.find(it->location) != std::string::npos)
-		{
-			std::cout <<CYAN<< "Matched location: " << it->location <<RESET<< std::endl;
-			std::cout <<CYAN<< "Root directory: " << it->rootDirectory <<RESET<< std::endl;
-			std::cout <<CYAN<< "Directory listing: " << it->directoryListing <<RESET<< std::endl;
-			std::cout <<CYAN<< "Indexes: " <<RESET<< std::endl;
-			for (std::vector<std::string>::const_iterator it2 = it->indexes.begin(); it2 != it->indexes.end(); ++it2)
-				std::cout <<CYAN<< "  " << *it2 <<RESET<< std::endl;
-			std::cout <<CYAN<< "Allowed methods: " <<RESET<< std::endl;
-			std::cout <<CYAN<< "  GET: " << it->allowedMethods.GET <<RESET<< std::endl;
-			std::cout <<CYAN<< "  POST: " << it->allowedMethods.POST <<RESET<< std::endl;
-			std::cout <<CYAN<< "  DELETE: " << it->allowedMethods.DELETE <<RESET<< std::endl;
-			std::cout <<CYAN<< "Alias: " << it->alias <<RESET<< std::endl;
 
-			if (!it->rootDirectory.empty())
-			{
-				if (it->alias)
-					targetPath = joinPaths(it->rootDirectory, path.substr(it->location.size()));
-				else
-					targetPath = joinPaths(it->rootDirectory, path);
-			}
-			else
-				targetPath = joinPaths(_defRoute, path);
-			break;
-		}
+	if (!location.root.empty())
+	{
+		if (location.isAlias)
+			targetPath = joinPaths(location.root, request.path.substr(location.path.size()));
+		else
+			targetPath = joinPaths(location.root, request.path);
 	}
-	//concatena il path con la root directory
-	if (targetPath.empty())
-        targetPath = joinPaths(_defRoute, path);
-	std::cout <<CYAN<< "Target path: " << targetPath <<RESET<< std::endl;
+	else
+		targetPath = joinPaths(_root, request.path);
 	return targetPath;
 }
 
-std::string Server::genResponse(std::string const &request) const
+std::string Server::genDirListing(std::string const &path, Location const &location) const
 {
-	std::string response;
-	std::ostringstream contentStream;
-	std::string content;
-	std::ostringstream headerStream;
-	std::string targetPath = buildFilePath(request);
-	std::ifstream file;
-	std::string indexPath;
+	std::string dirListing;
+	std::ostringstream oss;
+	DIR *dir;
+	struct dirent *ent;
+	struct stat st;
+	std::string filePath;
 
-	for (std::vector<std::string>::const_iterator it = _defIndexes.begin(); it != _defIndexes.end(); ++it)
+	dir = opendir(path.c_str());
+	if (dir == NULL)
 	{
-		indexPath = targetPath + *it;
-		if (access(indexPath.c_str(), F_OK) != -1)
+		return genErrorPage(location, 403, "Forbidden");
+	}
+	oss << "<!DOCTYPE html>"
+		<< "<html lang=\"en\">"
+		<< "<head>"
+		<< "<title>Index of " << path << "</title>"
+		<< "</head>"
+		<< "<body>"
+		<< "<center>"
+		<< "<h1>Index of " << path << "</h1>"
+		<< "<hr>"
+		<< "<table>";
+	while ((ent = readdir(dir)) != NULL)
+	{
+		if (strcmp(ent->d_name, ".") == 0)
+			continue;
+		filePath = joinPaths(path, ent->d_name);
+		if (stat(filePath.c_str(), &st) == 0)
 		{
-			file.open(indexPath.c_str());
-			break;
+			if (S_ISDIR(st.st_mode))
+				oss << "<tr><td><a href=\"" << ent->d_name << "/\">" << ent->d_name << "/</a></td></tr>";
+			else
+				oss << "<tr><td><a href=\"" << ent->d_name << "\">" << ent->d_name << "</a></td></tr>";
 		}
 	}
-	if (!file.is_open())
+	oss << "</table>"
+		<< "<hr>"
+		<< "<center>webzerv/TeamForzaAgain</center>"
+		<< "</body>"
+		<< "</html>";
+	dirListing = oss.str();
+	closedir(dir);
+	return dirListing;
+}
+
+#include <sys/stat.h>
+
+bool findIndexFile(const std::string &directory, const std::vector<std::string> &indexFiles, std::string &indexContent)
+{
+    for (std::vector<std::string>::const_iterator it = indexFiles.begin(); it != indexFiles.end(); ++it)
+    {
+        std::string indexPath = joinPaths(directory, *it);
+        std::ifstream file(indexPath.c_str());
+        if (file.is_open())
+        {
+            std::ostringstream contentStream;
+            contentStream << file.rdbuf();
+            indexContent = contentStream.str();
+            file.close();
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+HttpResponse Server::genGetResponse(HttpRequest const &request) const
+{
+	HttpResponse response;
+	std::ifstream file;
+	std::ostringstream contentStream;
+
+	response.location = findLocation(request);
+	if (response.location.allowedMethods.GET == false)
 	{
-		indexPath = targetPath + "index.html";
-		if (access(indexPath.c_str(), F_OK) != -1)
-			file.open(indexPath.c_str());
+		response.body = genErrorPage(response.location, 403, "Forbidden");
+		response.statusCode = 403;
+		response.statusMessage = "Forbidden";
+		return response;
 	}
-		
-	if (!file.is_open())
-        return response404();
 
-	//stampa la prima riga di request
+	std::string targetPath = buildFilePath(request, response.location);
 
-    contentStream << file.rdbuf();
-    file.close();
-    content = contentStream.str();
-    headerStream << "HTTP/1.1 200 OK\r\n";
-    headerStream << "Content-Type: text/html\r\n";
-    headerStream << "Content-Length: " << content.size() << "\r\n";
-    headerStream << "\r\n";
-    response = headerStream.str() + content;
-    return response;
+	std::cout <<CYAN<< "Matched location: " << response.location.path <<RESET<< std::endl;
+	std::cout <<CYAN<< "Root directory: " << response.location.root <<RESET<< std::endl;
+	std::cout <<CYAN<< "Directory listing: " << response.location.dirListing <<RESET<< std::endl;
+	std::cout <<CYAN<< "Target path: " << targetPath <<RESET<< std::endl;
+	std::cout <<CYAN<< "Indexes: " <<RESET<< std::endl;
+	for (std::vector<std::string>::const_iterator it = response.location.indexFiles.begin(); it != response.location.indexFiles.end(); ++it)
+		std::cout <<CYAN<< "  " << *it <<RESET<< std::endl;
+	std::cout <<CYAN<< "Allowed methods: " <<RESET<< std::endl;
+	std::cout <<CYAN<< "  GET: " << response.location.allowedMethods.GET <<RESET<< std::endl;
+	std::cout <<CYAN<< "  POST: " << response.location.allowedMethods.POST <<RESET<< std::endl;
+	std::cout <<CYAN<< "  DELETE: " << response.location.allowedMethods.DELETE <<RESET<< std::endl;
+	std::cout <<CYAN<< "Alias: " << response.location.isAlias <<RESET<< std::endl;
+	if (targetPath[targetPath.size() - 1] == '/')
+	{
+		bool foundIndex = false;
+		std::vector<std::string>::const_iterator it;
+		std::string indexPath;
+
+		for (it = response.location.indexFiles.begin(); it != response.location.indexFiles.end(); ++it)
+		{
+			indexPath = joinPaths(targetPath, *it);
+			file.open(indexPath.c_str());
+			if (file.is_open())
+			{
+				foundIndex = true;
+				break;
+			}
+		}
+		if (!foundIndex)
+		{
+			for (it = _defIndexFiles.begin(); it != _defIndexFiles.end(); ++it)
+			{
+				indexPath = joinPaths(targetPath, *it);
+				file.open(indexPath.c_str());
+				if (file.is_open())
+				{
+					foundIndex = true;
+					break;
+				}
+			}
+			if (!foundIndex)
+			{
+				indexPath = joinPaths(targetPath, "index.html");
+				file.open(indexPath.c_str());
+				if (file.is_open())
+					foundIndex = true;
+			}
+		}
+		if (foundIndex)
+		{
+			response.statusCode = 200;
+			response.statusMessage = "OK";
+			contentStream << file.rdbuf();
+			response.body = contentStream.str();
+			file.close();
+		}
+		else if (response.location.dirListing)
+		{
+			response.statusCode = 200;
+			response.statusMessage = "OK";
+			response.body = genDirListing(targetPath, response.location);
+		}
+		else
+		{
+			response.body = genErrorPage(response.location, 403, "Forbidden");
+			response.statusCode = 403;
+			response.statusMessage = "Forbidden";
+		}
+	}
+	else
+	{
+		struct stat st;
+		if (stat(targetPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+		{
+			response.body = genErrorPage(response.location, 301, "Moved Permanently");
+			response.statusCode = 301;
+			response.statusMessage = "Moved Permanently";
+			return response;
+		}
+
+		file.open(targetPath.c_str());
+		if (!file.is_open())
+		{
+			response.body = genErrorPage(response.location, 404, "Not Found");
+			response.statusCode = 404;
+			response.statusMessage = "Not Found";
+		}
+		else
+		{
+			response.statusCode = 200;
+			response.statusMessage = "OK";
+			contentStream << file.rdbuf();
+			response.body = contentStream.str();
+			file.close();
+		}
+	}
+	return response;
+}
+
+std::string Server::genResponse(HttpRequest const &request) const
+{
+	HttpResponse response;
+
+	if (request.method == "GET")
+		response = genGetResponse(request);
+	// else if (request.method == "POST")
+	// 	response = genPostResponse(request);
+	// else if (request.method == "DELETE")
+	// 	response = genDeleteResponse(request);
+
+    return response.toString();
 }

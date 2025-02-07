@@ -10,21 +10,26 @@ class Server
 		Server(ListeningSocket *ls, ServerConfig const &serverConfig);
 		~Server() {};
 
-		std::string getServerName() const { return _serverName; }
+		std::string getServerName() const { return _hostName; }
 		Server const *getServer() const { return this; }
 		ListeningSocket *getListeningSocket() const { return _ls; }
-		bool operator<(const Server &other) const { return _serverName < other._serverName; }
+		bool operator<(const Server &other) const { return _hostName < other._hostName; }
 
-		std::string genResponse(std::string const &request) const;
-		std::string buildFilePath(std::string const &request) const;
+		std::string genResponse(HttpRequest const &request) const;
+		HttpResponse genGetResponse(HttpRequest const &request) const;
+		Location findLocation(HttpRequest const &request) const;
+		std::string buildFilePath(HttpRequest const &request, Location const &location) const;
+		std::string genErrorPage(Location const &location, int code, std::string const &message) const;
+		std::string genDirListing(std::string const &path, Location const &location) const;
 
 	private:
 		ListeningSocket				*_ls;
-		std::string					_serverName;
-		std::string					_defRoute;
-		std::vector<std::string>	_defIndexes;
+		std::string					_hostName;
+		std::string					_root;
+		std::vector<std::string>	_defIndexFiles;
 		bool 						_defDirListing;
-		std::vector<Route>			_routes;
+		std::map<int, std::string>	_errorPages;
+		std::vector<Location>		_locations;
 
 };
 
