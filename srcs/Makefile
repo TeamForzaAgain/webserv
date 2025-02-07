@@ -1,6 +1,6 @@
 # Makefile
 
-NAME = webserv
+NAME = webzerv
 
 SRCS = *.cpp errorResponses/*.cpp
 

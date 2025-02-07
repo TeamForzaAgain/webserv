@@ -12,25 +12,32 @@ ServerConfig fillServer1()
 	serverConfig.hostName = "Server1";
 
 	serverConfig.defLocation.path = "";
-	serverConfig.defLocation.root = "/html/";
+	serverConfig.defLocation.root = "./html/";
 	serverConfig.defLocation.dirListing = true;
+	serverConfig.defLocation.errorPages[404] = "404.html";
+	serverConfig.defLocation.errorPages[403] = "403.html";
+	serverConfig.defLocation.errorPages[301] = "301.html";
 
 	Location location;
-	location.path = "/";
+	location.path = "/server1/";
     location.root = "";
-	location.dirListing = true;
+	location.dirListing = false;
 	location.isAlias = false;
 	location.indexFiles.push_back("info.html");
 	location.allowedMethods = (Methods){true, false, false};
+	location.errorPages[404] = "404.html";
+	location.errorPages[403] = "403.html";
+	location.errorPages[301] = "301.html";
 	serverConfig.locations.push_back(location);
 
+
 	Location location2;
-	location2.path = "/server1/";
-	location2.root = "/html/";
+	location2.path = "/";
+	location2.root = "./html/";
 	location2.dirListing = true;
 	location2.indexFiles.push_back("welcome.html");
 	location2.allowedMethods = (Methods){true, false, false};
-	location2.isAlias = false;
+	location2.isAlias = true;
 	serverConfig.locations.push_back(location2);
 	return serverConfig;
 }
@@ -42,7 +49,7 @@ ServerConfig fillServer2()
 	serverConfig.hostName = "Server2";
 
 	serverConfig.defLocation.path = "";
-	serverConfig.defLocation.root = "/";
+	serverConfig.defLocation.root = "./";
 	serverConfig.defLocation.dirListing = true;
 
 	Location location;
