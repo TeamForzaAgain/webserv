@@ -21,7 +21,7 @@ ServerConfig fillServer1()
 	Location location;
 	location.path = "/server1/";
     location.root = "";
-	location.dirListing = false;
+	location.dirListing = true;
 	location.isAlias = false;
 	location.indexFiles.push_back("info.html");
 	location.allowedMethods = (Methods){true, false, false};
@@ -39,6 +39,16 @@ ServerConfig fillServer1()
 	location2.allowedMethods = (Methods){true, false, false};
 	location2.isAlias = true;
 	serverConfig.locations.push_back(location2);
+
+	Location location3;
+	location3.path = "/favicon.ico";
+	location3.root = "./html/";
+	location3.dirListing = false;
+	location3.indexFiles.push_back("favicon.ico");
+	location3.allowedMethods = (Methods){true, false, false};
+	location3.isAlias = false;
+	serverConfig.locations.push_back(location3);
+
 	return serverConfig;
 }
 

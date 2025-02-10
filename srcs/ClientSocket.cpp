@@ -250,7 +250,7 @@ void ClientSocket::genResponse(ServerManager &serverManager, int bytesRead)
     if (_status != 0)
     {
         if (_status != 2)
-            _response = _server->genResponse(requestString);
+            _response = _server->genResponse(_request);
         _request.clear();
     }
 }
