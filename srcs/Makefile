@@ -2,7 +2,7 @@
 
 NAME = webzerv
 
-SRCS = *.cpp errorResponses/*.cpp
+SRCS = *.cpp serverFiles/*.cpp
 
 CXX = g++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I.

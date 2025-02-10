@@ -18,10 +18,15 @@ class Server
 		std::string genResponse(HttpRequest const &request) const;
 		HttpResponse genGetResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genPostResponse(HttpRequest const &request, Location const &location) const;
-		Location findLocation(HttpRequest const &request) const;
-		std::string buildFilePath(HttpRequest const &request, Location const &location) const;
 		HttpResponse genErrorPage(Location const &location, int code, std::string const &message) const;
 		HttpResponse genDirListing(std::string const &path, Location const &location) const;
+		
+		// Utility
+		Location findLocation(HttpRequest const &request) const;
+		std::string buildFilePath(HttpRequest const &request, Location const &location) const;
+		std::string Server::joinPaths(const std::string& root, const std::string& path) const;
+		std::string Server::readFileContent(const std::string &filePath) const;
+		std::string Server::findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const;
 
 	private:
 		ListeningSocket				*_ls;

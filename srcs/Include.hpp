@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 
 
