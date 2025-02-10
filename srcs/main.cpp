@@ -36,7 +36,7 @@ ServerConfig fillServer1()
 	location2.root = "./html/";
 	location2.dirListing = true;
 	location2.indexFiles.push_back("welcome.html");
-	location2.allowedMethods = (Methods){true, false, false};
+	location2.allowedMethods = (Methods){true, true, true};
 	location2.isAlias = true;
 	serverConfig.locations.push_back(location2);
 

@@ -265,8 +265,6 @@ std::string Server::genDirListing(std::string const &path, Location const &locat
 	return dirListing;
 }
 
-#include <sys/stat.h>
-
 bool findIndexFile(const std::string &directory, const std::vector<std::string> &indexFiles, std::string &indexContent)
 {
     for (std::vector<std::string>::const_iterator it = indexFiles.begin(); it != indexFiles.end(); ++it)
@@ -403,12 +401,102 @@ HttpResponse Server::genGetResponse(HttpRequest const &request) const
 	return response;
 }
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+HttpResponse Server::genPostResponse(HttpRequest const &request) const
+{
+	HttpResponse response;
+	
+	response.location = findLocation(request);
+	if (response.location.allowedMethods.POST == false)
+	{
+		response.body = genErrorPage(response.location, 403, "Forbidden");
+		response.statusCode = 403;
+		response.statusMessage = "Forbidden";
+		return response;
+	}
+
+	std::string targetPath = buildFilePath(request, response.location);
+	
+	// Controlla che il path sia una directory
+	std::cout <<CYAN<< "Target Path: " << targetPath <<RESET<< std::endl;
+	struct stat st;
+	/* if (stat(targetPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+	{
+
+		response.body = genErrorPage(response.location, 301, "Moved Permanently");
+		response.statusCode = 301;
+		response.statusMessage = "Moved Permanently";
+		return response;
+	} */
+	// Controlla se il Content-Type è multipart/form-data
+	if (request.headers.find("Content-Type") != request.headers.end() &&
+		request.headers.find("Content-Type")->second.find("multipart/form-data") != std::string::npos)
+	{
+		if (request.headers.find("filename") != request.headers.end())
+		{
+			std::string filename = request.headers.find("filename")->second;
+			std::string sourcePath = "./uploads/" + filename;
+
+			// Controlla che il file esista
+			if (stat(sourcePath.c_str(), &st) != 0)
+			{
+				response.body = genErrorPage(response.location, 404, "File Not Found");
+				response.statusCode = 404;
+				response.statusMessage = "File Not Found";
+				return response;
+			}
+
+			// Creazione del processo figlio
+			pid_t pid = fork();
+			if (pid == -1)
+			{
+				response.body = genErrorPage(response.location, 500, "Internal Server Error");
+				response.statusCode = 500;
+				response.statusMessage = "Internal Server Error";
+				return response;
+			}
+			else if (pid == 0) // Processo figlio
+			{
+				// Esegui mv per spostare il file
+				char *args[] = {(char *)"/bin/mv", (char *)sourcePath.c_str(), (char *)targetPath.c_str(), NULL};
+				execve("/bin/mv", args, NULL);
+				_exit(1); // Se execve fallisce
+			}
+			else // Processo padre
+			{
+				int status;
+				waitpid(pid, &status, 0);
+				if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+				{
+					response.body = "File uploaded successfully.";
+					response.statusCode = 200;
+					response.statusMessage = "OK";
+				}
+				else
+				{
+					response.body = genErrorPage(response.location, 500, "Internal Server Error");
+					response.statusCode = 500;
+					response.statusMessage = "Internal Server Error";
+				}
+			}
+		}
+	}
+
+	return response;
+}
+
+
 std::string Server::genResponse(HttpRequest const &request) const
 {
 	HttpResponse response;
 
 	if (request.method == "GET")
 		response = genGetResponse(request);
+	if (request.method == "POST")
+		response = genPostResponse(request);
 	// else if (request.method == "POST")
 	// 	response = genPostResponse(request);
 	// else if (request.method == "DELETE")

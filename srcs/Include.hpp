@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <dirent.h>
+#include <sys/stat.h>
 
 
 
@@ -37,7 +38,7 @@
 #define CYAN    "\033[36m"      /* Cyan */
 #define ORANGE  "\033[38;5;208m" /* Orange */
 
-#define BUFFERSIZE 1024
+#define BUFFERSIZE 524288
 
 #define UPLOAD_DIRECTORY "./uploads/"
 

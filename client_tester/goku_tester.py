@@ -1,8 +1,8 @@
 import requests
 
 # Configurazione
-SERVER_URL = "http://localhost:8080/upload"  # Modifica con il tuo server
-FILE_PATH = "Gohan.mp4"  # Il file da inviare
+SERVER_URL = "http://localhost:8080/goku/"  # Modifica con il tuo server
+FILE_PATH = "goku.png"  # Il file da inviare
 
 def upload_file():
     """Invia il file goku.png come multipart/form-data"""

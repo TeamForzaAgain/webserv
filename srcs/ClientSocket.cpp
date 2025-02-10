@@ -152,6 +152,8 @@ int ClientSocket::parseRequest(int bytesRead)
         }
         else if ((int)_request.body.size() >= _contentLength)
             return 1; // Completa
+        else 
+            return 0; // Incompleta
     }
     else if (_chunkLength != -1) // Gestione chunked
     {
@@ -202,16 +204,15 @@ int ClientSocket::parseRequest(int bytesRead)
                 return 0;
             }
         }
+        return 0;
     }
     
-    return 0; // Richiesta ancora incompleta
+    return _status;
 }
 
 
 void ClientSocket::genResponse(ServerManager &serverManager, int bytesRead)
 {
-    std::string const &requestString = std::string(_buffer.begin(), _buffer.end());
-    // Parsing della richiesta, creazione della struttura HttpRequest
     _status = parseRequest(bytesRead);
 
     // Stampa della struttura HttpRequest

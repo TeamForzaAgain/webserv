@@ -17,6 +17,7 @@ class Server
 
 		std::string genResponse(HttpRequest const &request) const;
 		HttpResponse genGetResponse(HttpRequest const &request) const;
+		HttpResponse genPostResponse(HttpRequest const &request) const;
 		Location findLocation(HttpRequest const &request) const;
 		std::string buildFilePath(HttpRequest const &request, Location const &location) const;
 		std::string genErrorPage(Location const &location, int code, std::string const &message) const;
