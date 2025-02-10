@@ -132,7 +132,7 @@ void ServerManager::readClient(size_t &i)
 
     tempBuffer[bytesRead] = '\0';
     _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer, bytesRead);
-    std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
+    //std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
     _clientSockets[_pollfds[i].fd]->genResponse(*this, bytesRead);
     if (_clientSockets[_pollfds[i].fd]->getStatus() == 0)
         _pollfds[i].events = POLLIN;

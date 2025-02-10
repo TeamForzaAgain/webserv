@@ -16,12 +16,12 @@ class Server
 		bool operator<(const Server &other) const { return _hostName < other._hostName; }
 
 		std::string genResponse(HttpRequest const &request) const;
-		HttpResponse genGetResponse(HttpRequest const &request) const;
-		HttpResponse genPostResponse(HttpRequest const &request) const;
+		HttpResponse genGetResponse(HttpRequest const &request, Location const &location) const;
+		HttpResponse genPostResponse(HttpRequest const &request, Location const &location) const;
 		Location findLocation(HttpRequest const &request) const;
 		std::string buildFilePath(HttpRequest const &request, Location const &location) const;
-		std::string genErrorPage(Location const &location, int code, std::string const &message) const;
-		std::string genDirListing(std::string const &path, Location const &location) const;
+		HttpResponse genErrorPage(Location const &location, int code, std::string const &message) const;
+		HttpResponse genDirListing(std::string const &path, Location const &location) const;
 
 	private:
 		ListeningSocket				*_ls;

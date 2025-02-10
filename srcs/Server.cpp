@@ -15,8 +15,6 @@ Location Server::findLocation(HttpRequest const &request) const
 	const Location* bestMatch = NULL;
 	size_t bestMatchLength = 0;
 
-	std::cout <<CYAN<< "Method: " << request.method <<RESET<< std::endl;
-	std::cout <<CYAN<< "Path: " << request.path <<RESET<<"\n"<< std::endl;
 	for (std::vector<Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it)
 	{
 		if (request.path.rfind(it->path, 0) == 0) // Verifica se path inizia con it->path
@@ -44,163 +42,87 @@ Location Server::findLocation(HttpRequest const &request) const
 	return defaultLocation;
 }
 
-// Rimuove gli slash iniziali e finali da una stringa
-// Rimuove lo slash finale se presente
-std::string removeTrailingSlash(const std::string& path)
-{
-    if (!path.empty() && path[path.size() - 1] == '/')
-        return path.substr(0, path.size() - 1);
-    return path;
-}
-
-// Rimuove lo slash iniziale se presente
-std::string removeLeadingSlash(const std::string& path)
-{
-    if (!path.empty() && path[0] == '/')
-        return path.substr(1);
-    return path;
-}
-
-
 // Unisce due percorsi assicurandosi che abbiano un solo `/`
 std::string joinPaths(const std::string& root, const std::string& path)
 {
-    return removeTrailingSlash(root) + "/" + removeLeadingSlash(path);
+	std::string cleanRoot = root;
+	std::string cleanPath = path;
+
+	if (!cleanRoot.empty() && cleanRoot[cleanRoot.size() - 1] == '/')
+		cleanRoot = cleanRoot.substr(0, cleanRoot.size() - 1);
+
+	if (!cleanPath.empty() && cleanPath[0] == '/')
+		cleanPath = cleanPath.substr(1);
+
+	return cleanRoot + "/" + cleanPath;
+}
+
+std::string readFileContent(const std::string &filePath)
+{
+	std::ifstream file(filePath.c_str());
+	if (!file.is_open())
+		return "";
+	std::ostringstream contentStream;
+	contentStream << file.rdbuf();
+	file.close();
+	return contentStream.str();
 }
 
 std::string genDefaultErrorPage(int code, const std::string& message)
 {
-    std::ostringstream oss;
-    oss << "<!DOCTYPE html>\n"
-        << "<html lang=\"en\">\n"
-        << "<head>\n"
-        << "    <title>" << code << " " << message << "</title>\n"
-        << "</head>\n"
-        << "<body>\n"
-        << "    <center>\n"
-        << "        <h1>" << code << " " << message << "</h1>\n"
-        << "    </center>\n"
-        << "    <hr>\n"
-        << "    <center>webzerv/TeamForzaAgain</center>\n"
-        << "</body>\n"
-        << "</html>\n";
-    return oss.str();
+	std::ostringstream oss;
+
+	oss << "<!DOCTYPE html>\n"
+		<< "<html lang=\"en\">\n"
+		<< "<head>\n"
+		<< "    <title>" << code << " " << message << "</title>\n"
+		<< "</head>\n"
+		<< "<body>\n"
+		<< "    <center>\n"
+		<< "        <h1>" << code << " " << message << "</h1>\n"
+		<< "    </center>\n"
+		<< "    <hr>\n"
+		<< "    <center>webzerv/TeamForzaAgain</center>\n"
+		<< "</body>\n"
+		<< "</html>\n";
+	return oss.str();
 }
 
-std::string Server::genErrorPage(const Location &location, int code, const std::string &message) const
+HttpResponse Server::genErrorPage(const Location &location, int code, const std::string &message) const
 {
-    std::string filePath;
-    bool hasCustomPage = false;
+	HttpResponse response;
+	std::string filePath;
+	bool hasCustomPage = false;
 
-    // Verifica se la location ha una pagina di errore personalizzata
-    std::map<int, std::string>::const_iterator it = location.errorPages.find(code);
-    if (it != location.errorPages.end())
-    {
-        if (!location.root.empty())
-            filePath = joinPaths(location.root, it->second);
-        else
-            filePath = joinPaths(_root, it->second);
-		std::cout <<CYAN<< "Custom error page: " << filePath <<RESET<< std::endl;
-        hasCustomPage = true;
-    }
-    else
-    {
-        // Verifica se il server ha una pagina di errore personalizzata
-        it = _errorPages.find(code);
-        if (it != _errorPages.end())
-        {
-            filePath = joinPaths(_root, it->second);
-            hasCustomPage = true;
-        }
-    }
+	response.statusCode = code;
+	response.statusMessage = message;
+	// Verifica se la location ha una pagina di errore personalizzata
+	std::map<int, std::string>::const_iterator it = location.errorPages.find(code);
+	if (it != location.errorPages.end())
+	{
+		if (!location.root.empty())
+			filePath = joinPaths(location.root, it->second);
+		else
+			filePath = joinPaths(_root, it->second);
+		hasCustomPage = true;
+	}
+	else
+	{
+		// Verifica se il server ha una pagina di errore personalizzata
+		it = _errorPages.find(code);
+		if (it != _errorPages.end())
+		{
+			filePath = joinPaths(_root, it->second);
+			hasCustomPage = true;
+		}
+	}
 
-    if (hasCustomPage)
-    {
-        std::ifstream file(filePath.c_str());
-        if (file.is_open())
-        {
-            std::ostringstream contentStream;
-            contentStream << file.rdbuf();
-            file.close();
-            return contentStream.str();
-        }
-        else
-        {
-            // Se non riesce ad aprire il file personalizzato, usa la pagina di errore predefinita
-            return genDefaultErrorPage(code, message);
-        }
-    }
-    else
-    {
-        // Usa la pagina di errore predefinita
-        return genDefaultErrorPage(code, message);
-    }
+	if (hasCustomPage)
+		response.body = readFileContent(filePath);
+	if (response.body.empty())
+		response.body = genDefaultErrorPage(code, message);
+	return response;
 }
-
-// std::string Server::genErrorPage(Location const &location, int code, std::string const &message) const
-// {
-// 	std::string errorPage;
-// 	std::string filePath;
-// 	std::map<int, std::string>::const_iterator it = location.errorPages.find(code);
-
-// 	if (it == location.errorPages.end())
-// 	{
-// 		std::map<int, std::string>::const_iterator it2 = _errorPages.find(code);
-// 		if (it2 == _errorPages.end())
-// 		{
-// 			std::ostringstream oss;
-// 			oss << "<!DOCTYPE html>\n"
-// 			<< "<html lang=\"en\">\n"
-// 			<< "<head>\n"
-// 			<< "	<title>" << code << " " << message << "</title>\n"
-// 			<< "</head>\n"
-// 			<< "<body>\n"
-// 			<< "	<center>\n"
-// 			<< "		<h1>" << code << " " << message << "</h1>\n"
-// 			<< "	</center>\n"
-// 			<< "	<hr>\n"
-// 			<< "	<center>webzerv/TeamForzaAgain</center>\n"
-// 			<< "</body>\n"
-// 			<< "</html>\n";
-// 			errorPage = oss.str();
-// 			return errorPage;
-// 		}
-// 		else
-// 			filePath = joinPaths(_root, it2->second);
-// 	}
-// 	else if (!location.root.empty())
-// 		filePath = joinPaths(location.root, it->second);
-// 	else
-// 		filePath = joinPaths(_root, it->second);
-// 	std::ifstream file(filePath.c_str());
-// 	std::ostringstream contentStream;
-
-// 	if (file.is_open())
-// 	{
-// 		contentStream << file.rdbuf();
-// 		errorPage = contentStream.str();
-// 		file.close();
-// 	}
-// 	else
-// 	{
-// 		std::ostringstream oss;
-// 		oss << "<!DOCTYPE html>\n"
-// 			<< "<html lang=\"en\">\n"
-// 			<< "<head>\n"
-// 			<< "	<title>" << code << " " << message << "</title>\n"
-// 			<< "</head>\n"
-// 			<< "<body>\n"
-// 			<< "	<center>\n"
-// 			<< "		<h1>" << code << " " << message << "</h1>\n"
-// 			<< "	</center>\n"
-// 			<< "	<hr>\n"
-// 			<< "	<center>webzerv/TeamForzaAgain</center>\n"
-// 			<< "</body>\n"
-// 			<< "</html>\n";
-// 		errorPage = oss.str();
-// 	}
-// 	return errorPage;
-// }
 
 std::string Server::buildFilePath(HttpRequest const &request, Location const &location) const
 {
@@ -218,9 +140,9 @@ std::string Server::buildFilePath(HttpRequest const &request, Location const &lo
 	return targetPath;
 }
 
-std::string Server::genDirListing(std::string const &path, Location const &location) const
+HttpResponse Server::genDirListing(std::string const &path, Location const &location) const
 {
-	std::string dirListing;
+	HttpResponse response;
 	std::ostringstream oss;
 	DIR *dir;
 	struct dirent *ent;
@@ -260,115 +182,55 @@ std::string Server::genDirListing(std::string const &path, Location const &locat
 		<< "<center>webzerv/TeamForzaAgain</center>"
 		<< "</body>"
 		<< "</html>";
-	dirListing = oss.str();
+	response.statusCode = 200;
+	response.statusMessage = "OK";
+	response.body = oss.str();
 	closedir(dir);
-	return dirListing;
+	return response;
 }
 
-bool findIndexFile(const std::string &directory, const std::vector<std::string> &indexFiles, std::string &indexContent)
+std::string findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles)
 {
-    for (std::vector<std::string>::const_iterator it = indexFiles.begin(); it != indexFiles.end(); ++it)
-    {
-        std::string indexPath = joinPaths(directory, *it);
-        std::ifstream file(indexPath.c_str());
-        if (file.is_open())
-        {
-            std::ostringstream contentStream;
-            contentStream << file.rdbuf();
-            indexContent = contentStream.str();
-            file.close();
-            return true;
-        }
-    }
-    return false;
+	std::vector<std::string>::const_iterator it;
+	std::string content;
+	std::string path;
+
+	for (it = indexFiles.begin(); it != indexFiles.end(); ++it) {
+		path = joinPaths(directory, *it);
+		content = readFileContent(path);
+		if (!content.empty())
+			return content;
+	}
+	return "";
 }
 
-
-
-HttpResponse Server::genGetResponse(HttpRequest const &request) const
+HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &location) const
 {
 	HttpResponse response;
 	std::ifstream file;
 	std::ostringstream contentStream;
 
-	response.location = findLocation(request);
-	if (response.location.allowedMethods.GET == false)
-	{
-		response.body = genErrorPage(response.location, 403, "Forbidden");
-		response.statusCode = 403;
-		response.statusMessage = "Forbidden";
-		return response;
-	}
-
-	std::string targetPath = buildFilePath(request, response.location);
-
-	std::cout <<CYAN<< "Matched location: " << response.location.path <<RESET<< std::endl;
-	std::cout <<CYAN<< "Root directory: " << response.location.root <<RESET<< std::endl;
-	std::cout <<CYAN<< "Directory listing: " << response.location.dirListing <<RESET<< std::endl;
-	std::cout <<CYAN<< "Target path: " << targetPath <<RESET<< std::endl;
-	std::cout <<CYAN<< "Indexes: " <<RESET<< std::endl;
-	for (std::vector<std::string>::const_iterator it = response.location.indexFiles.begin(); it != response.location.indexFiles.end(); ++it)
-		std::cout <<CYAN<< "  " << *it <<RESET<< std::endl;
-	std::cout <<CYAN<< "Allowed methods: " <<RESET<< std::endl;
-	std::cout <<CYAN<< "  GET: " << response.location.allowedMethods.GET <<RESET<< std::endl;
-	std::cout <<CYAN<< "  POST: " << response.location.allowedMethods.POST <<RESET<< std::endl;
-	std::cout <<CYAN<< "  DELETE: " << response.location.allowedMethods.DELETE <<RESET<< std::endl;
-	std::cout <<CYAN<< "Alias: " << response.location.isAlias <<RESET<< std::endl;
+	std::string targetPath = buildFilePath(request, location);
 	if (targetPath[targetPath.size() - 1] == '/')
 	{
-		bool foundIndex = false;
-		std::vector<std::string>::const_iterator it;
-		std::string indexPath;
+		response.body = findIndexFileContent(targetPath, location.indexFiles);
+		if (response.body.empty())
+			response.body = findIndexFileContent(targetPath, _defIndexFiles);
+		if (response.body.empty())
+			response.body = readFileContent(joinPaths(targetPath, "index.html"));
 
-		for (it = response.location.indexFiles.begin(); it != response.location.indexFiles.end(); ++it)
-		{
-			indexPath = joinPaths(targetPath, *it);
-			file.open(indexPath.c_str());
-			if (file.is_open())
-			{
-				foundIndex = true;
-				break;
-			}
-		}
-		if (!foundIndex)
-		{
-			for (it = _defIndexFiles.begin(); it != _defIndexFiles.end(); ++it)
-			{
-				indexPath = joinPaths(targetPath, *it);
-				file.open(indexPath.c_str());
-				if (file.is_open())
-				{
-					foundIndex = true;
-					break;
-				}
-			}
-			if (!foundIndex)
-			{
-				indexPath = joinPaths(targetPath, "index.html");
-				file.open(indexPath.c_str());
-				if (file.is_open())
-					foundIndex = true;
-			}
-		}
-		if (foundIndex)
+		if (!response.body.empty())
 		{
 			response.statusCode = 200;
 			response.statusMessage = "OK";
-			contentStream << file.rdbuf();
-			response.body = contentStream.str();
-			file.close();
 		}
-		else if (response.location.dirListing)
+		else if (location.dirListing)
 		{
-			response.statusCode = 200;
-			response.statusMessage = "OK";
-			response.body = genDirListing(targetPath, response.location);
+			response = genDirListing(targetPath, location);
 		}
 		else
 		{
-			response.body = genErrorPage(response.location, 403, "Forbidden");
-			response.statusCode = 403;
-			response.statusMessage = "Forbidden";
+			response = genErrorPage(location, 403, "Forbidden");
 		}
 	}
 	else
@@ -376,26 +238,17 @@ HttpResponse Server::genGetResponse(HttpRequest const &request) const
 		struct stat st;
 		if (stat(targetPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
 		{
-			response.body = genErrorPage(response.location, 301, "Moved Permanently");
-			response.statusCode = 301;
-			response.statusMessage = "Moved Permanently";
-			return response;
+			return genErrorPage(location, 301, "Moved Permanently");
 		}
-
-		file.open(targetPath.c_str());
-		if (!file.is_open())
+		response.body = readFileContent(targetPath);
+		if (response.body.empty())
 		{
-			response.body = genErrorPage(response.location, 404, "Not Found");
-			response.statusCode = 404;
-			response.statusMessage = "Not Found";
+			response = genErrorPage(location, 404, "Not Found");
 		}
 		else
 		{
 			response.statusCode = 200;
 			response.statusMessage = "OK";
-			contentStream << file.rdbuf();
-			response.body = contentStream.str();
-			file.close();
 		}
 	}
 	return response;
@@ -405,23 +258,13 @@ HttpResponse Server::genGetResponse(HttpRequest const &request) const
 #include <sys/wait.h>
 #include <unistd.h>
 
-HttpResponse Server::genPostResponse(HttpRequest const &request) const
+HttpResponse Server::genPostResponse(HttpRequest const &request, Location const &location) const
 {
 	HttpResponse response;
-	
-	response.location = findLocation(request);
-	if (response.location.allowedMethods.POST == false)
-	{
-		response.body = genErrorPage(response.location, 403, "Forbidden");
-		response.statusCode = 403;
-		response.statusMessage = "Forbidden";
-		return response;
-	}
 
-	std::string targetPath = buildFilePath(request, response.location);
+	std::string targetPath = buildFilePath(request, location);
 	
 	// Controlla che il path sia una directory
-	std::cout <<CYAN<< "Target Path: " << targetPath <<RESET<< std::endl;
 	struct stat st;
 	/* if (stat(targetPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
 	{
@@ -443,20 +286,14 @@ HttpResponse Server::genPostResponse(HttpRequest const &request) const
 			// Controlla che il file esista
 			if (stat(sourcePath.c_str(), &st) != 0)
 			{
-				response.body = genErrorPage(response.location, 404, "File Not Found");
-				response.statusCode = 404;
-				response.statusMessage = "File Not Found";
-				return response;
+				return genErrorPage(location, 404, "File Not Found");
 			}
 
 			// Creazione del processo figlio
 			pid_t pid = fork();
 			if (pid == -1)
 			{
-				response.body = genErrorPage(response.location, 500, "Internal Server Error");
-				response.statusCode = 500;
-				response.statusMessage = "Internal Server Error";
-				return response;
+				return genErrorPage(location, 500, "Internal Server Error");
 			}
 			else if (pid == 0) // Processo figlio
 			{
@@ -477,9 +314,7 @@ HttpResponse Server::genPostResponse(HttpRequest const &request) const
 				}
 				else
 				{
-					response.body = genErrorPage(response.location, 500, "Internal Server Error");
-					response.statusCode = 500;
-					response.statusMessage = "Internal Server Error";
+					response = genErrorPage(location, 500, "Internal Server Error");
 				}
 			}
 		}
@@ -488,17 +323,32 @@ HttpResponse Server::genPostResponse(HttpRequest const &request) const
 	return response;
 }
 
+bool isMethodAllowed(const Location &location, const std::string &method)
+{
+	if (method == "GET")
+		return location.allowedMethods.GET;
+	if (method == "POST")
+		return location.allowedMethods.POST;
+	if (method == "DELETE")
+		return location.allowedMethods.DELETE;
+	return false;
+}
+
 
 std::string Server::genResponse(HttpRequest const &request) const
 {
 	HttpResponse response;
+	Location location = findLocation(request);
 
+	if (!isMethodAllowed(location, request.method))
+	{
+		response = genErrorPage(location, 405, "Method Not Allowed");
+		return response.toString();
+	}
 	if (request.method == "GET")
-		response = genGetResponse(request);
+		response = genGetResponse(request, location);
 	if (request.method == "POST")
-		response = genPostResponse(request);
-	// else if (request.method == "POST")
-	// 	response = genPostResponse(request);
+		response = genPostResponse(request, location);
 	// else if (request.method == "DELETE")
 	// 	response = genDeleteResponse(request);
 

@@ -102,7 +102,7 @@ std::string HttpResponse::toString() const
 	std::ostringstream requestStream;
 	
 	requestStream << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
-	requestStream << "Server: webserv/1.0\r\n";
+	requestStream << "Server: webzerv/TeamForzaAgain\r\n";
 	requestStream << "Content-Type: text/html\r\n";
 	requestStream << "Content-Length: " << body.size() << "\r\n";
 	requestStream << "\r\n";
