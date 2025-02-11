@@ -131,7 +131,13 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                     filename = bodyStr.substr(filenamePos, filenameEnd - filenamePos);
             }
             _request.headers["filename"] = filename;
-            std::string filePath = _server->getUploadDir() + filename;
+
+            Location const *location = _server->getUploadLocation();
+            if (!location)
+                return -1;
+            if (_request.path.find(location->path) != 0)
+                return -1;
+            std::string filePath = _server->buildFilePath(_request.path, *location) + filename;
             _uploadFile.open(filePath.c_str(), std::ios::binary);
             if (!_uploadFile)
             {

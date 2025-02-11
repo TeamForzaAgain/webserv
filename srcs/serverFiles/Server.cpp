@@ -6,7 +6,7 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:23:12 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 15:38:17 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/11 16:49:51 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,18 +16,17 @@ Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls),
 _hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
 _defIndexFiles(serverconfig.defLocation.indexFiles), _defDirListing(serverconfig.defLocation.dirListing),
 _errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations)
+{}
+
+Location const *Server::getUploadLocation() const
 {
-	// trova location con upload == true
-	for (std::vector<Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it)
+	// trovare la location con upload = true se esiste
+	for (size_t i = 0; i < _locations.size(); i++)
 	{
-		if (it->upload)
-		{
-			// costruisci path per la directory di upload
-			_uploadDir = buildFilePath(it->path, *it);
-			std::cout << "Upload directory: " << _uploadDir << std::endl;
-			break;
-		}
-	}		
+		if (_locations[i].upload)
+			return &_locations[i];
+	}
+	return NULL;
 }
 
 std::string genDefaultErrorPage(HttpResponse &response, int code, const std::string& message)
