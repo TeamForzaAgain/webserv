@@ -5,7 +5,7 @@ NAME = webzerv
 SRCS = *.cpp ./serverFiles/*.cpp
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -I./serverFiles/
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -I./serverFiles
 
 all: $(NAME)
 
