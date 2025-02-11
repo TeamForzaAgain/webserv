@@ -13,6 +13,7 @@ class Server
 		std::string getServerName() const { return _hostName; }
 		Server const *getServer() const { return this; }
 		ListeningSocket *getListeningSocket() const { return _ls; }
+		std::string getUploadDir() const { return _uploadDir; }
 		bool operator<(const Server &other) const { return _hostName < other._hostName; }
 
 		std::string genResponse(HttpRequest const &request) const;
@@ -23,7 +24,7 @@ class Server
 		
 		// Utility
 		Location findLocation(HttpRequest const &request) const;
-		std::string buildFilePath(HttpRequest const &request, Location const &location) const;
+		std::string buildFilePath(std::string const &path, Location const &location) const;
 		std::string joinPaths(const std::string& root, const std::string& path) const;
 		std::string readFileContent(const std::string &filePath) const;
 		std::string findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const;
@@ -32,6 +33,7 @@ class Server
 		ListeningSocket				*_ls;
 		std::string					_hostName;
 		std::string					_root;
+		std::string					_uploadDir;
 		std::vector<std::string>	_defIndexFiles;
 		bool 						_defDirListing;
 		std::map<int, std::string>	_errorPages;

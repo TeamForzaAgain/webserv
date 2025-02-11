@@ -2,7 +2,7 @@
 
 ClientSocket::ClientSocket(int fd, Server const *server) : Socket(fd),  _server(server),
         _status(1), _keepAlive(false), _contentLength(0), _chunkLength(-1), _headersLenght(0),
-        _bytesParsed(0), _isMultipart(false)
+        _isMultipart(false)
 {}
 
 ClientSocket::~ClientSocket()
@@ -28,9 +28,8 @@ void ClientSocket::addBuffer(const char *buffer, int bytesRead)
     _buffer.insert(_buffer.end(), buffer, buffer + bytesRead);
 }
 
-int ClientSocket::parseRequest(int bytesRead)
+int ClientSocket::parseRequest(ServerManager &serverManager)
 {
-    _bytesParsed += bytesRead;
     std::vector<char> requestBuffer(_buffer.begin(), _buffer.end());
     
     if (_status == 1 || _status == 2) // Nuova richiesta, dobbiamo parsare gli header
@@ -91,6 +90,23 @@ int ClientSocket::parseRequest(int bytesRead)
             if (boundaryPos != std::string::npos)
                 _boundary = "--" + it->second.substr(boundaryPos + 9);
         }
+
+        it = _request.headers.find("Host");
+        if (it != _request.headers.end() && !it->second.empty())
+        {
+            Server const *newServer = serverManager.findServerByHost(it->second, _server);
+            if (newServer)
+                _server = newServer;
+        }
+
+        it = _request.headers.find("Connection");
+        if (it != _request.headers.end() && !it->second.empty())
+        {
+            if (it->second == "keep-alive")
+                _keepAlive = true;
+            else if (it->second == "close")
+                _keepAlive = false;
+        }
     }
     
     // Lettura del body
@@ -115,7 +131,7 @@ int ClientSocket::parseRequest(int bytesRead)
                     filename = bodyStr.substr(filenamePos, filenameEnd - filenamePos);
             }
             _request.headers["filename"] = filename;
-            std::string filePath = std::string(UPLOAD_DIRECTORY) + filename;
+            std::string filePath = _server->getUploadDir() + filename;
             _uploadFile.open(filePath.c_str(), std::ios::binary);
             if (!_uploadFile)
             {
@@ -211,9 +227,9 @@ int ClientSocket::parseRequest(int bytesRead)
 }
 
 
-void ClientSocket::genResponse(ServerManager &serverManager, int bytesRead)
+void ClientSocket::genResponse(ServerManager &serverManager)
 {
-    _status = parseRequest(bytesRead);
+    _status = parseRequest(serverManager);
 
     // Stampa della struttura HttpRequest
     std::cout << ORANGE << "Metodo: " << _request.method << RESET << std::endl;
@@ -228,24 +244,6 @@ void ClientSocket::genResponse(ServerManager &serverManager, int bytesRead)
     std::cout << RESET << std::endl;
     std::cout << ORANGE << "Request status: " << _status << RESET << std::endl;
 
-
-    std::map<std::string, std::string>::iterator it;
-    it = _request.headers.find("Host");
-    if (it != _request.headers.end() && !it->second.empty())
-    {
-        Server const *newServer = serverManager.findServerByHost(it->second, _server);
-        if (newServer)
-            _server = newServer;
-    }
-
-    it = _request.headers.find("Connection");
-    if (it != _request.headers.end() && !it->second.empty())
-    {
-        if (it->second == "keep-alive")
-            _keepAlive = true;
-        else if (it->second == "close")
-            _keepAlive = false;
-    }
     if (_status != 2)
         _buffer.clear();
     if (_status != 0)

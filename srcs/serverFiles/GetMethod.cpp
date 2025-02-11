@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GetMethod.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:05:01 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/10 13:14:44 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/11 15:20:44 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 	std::ifstream file;
 	std::ostringstream contentStream;
 
-	std::string targetPath = buildFilePath(request, location);
+	std::string targetPath = buildFilePath(request.path, location);
 	if (targetPath[targetPath.size() - 1] == '/')
 	{
 		response.body = findIndexFileContent(targetPath, location.indexFiles);

@@ -17,8 +17,8 @@ class ClientSocket : public Socket
 		int getFd() const;
 		void addBuffer(const char *buffer, int bytesRead);
 
-		int parseRequest(int bytesRead);
-		void genResponse(ServerManager &serverMenager, int bytesRead);
+		int parseRequest(ServerManager &serverManager);
+		void genResponse(ServerManager &serverMenager);
 		std::string getBuffer() const;
 		std::string getResponse() const;
 		int getStatus() const;
@@ -35,7 +35,6 @@ class ClientSocket : public Socket
 		int _contentLength;
 		int _chunkLength;
 		int _headersLenght;
-		int _bytesParsed;
 		bool _isMultipart;
 		std::string _boundary;
 		std::ofstream _uploadFile;

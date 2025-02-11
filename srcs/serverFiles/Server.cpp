@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:23:12 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/10 13:23:15 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/11 15:29:45 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,19 @@ Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls),
 _hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
 _defIndexFiles(serverconfig.defLocation.indexFiles), _defDirListing(serverconfig.defLocation.dirListing),
 _errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations)
-{}
+{
+	// trova location con upload == true
+	for (std::vector<Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it)
+	{
+		if (it->upload)
+		{
+			// costruisci path per la directory di upload
+			_uploadDir = buildFilePath(it->path, *it);
+			std::cout << "Upload directory: " << _uploadDir << std::endl;
+			break;
+		}
+	}		
+}
 
 std::string genDefaultErrorPage(int code, const std::string& message)
 {

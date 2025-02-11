@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:14:01 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/10 13:16:32 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/11 15:17:22 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,19 +41,19 @@ std::string Server::findIndexFileContent(const std::string &directory, const std
 	return "";
 }
 
-std::string Server::buildFilePath(HttpRequest const &request, Location const &location) const
+std::string Server::buildFilePath(std::string const &path, Location const &location) const
 {
 	std::string targetPath;
 
 	if (!location.root.empty())
 	{
 		if (location.isAlias)
-			targetPath = joinPaths(location.root, request.path.substr(location.path.size()));
+			targetPath = joinPaths(location.root, path.substr(location.path.size()));
 		else
-			targetPath = joinPaths(location.root, request.path);
+			targetPath = joinPaths(location.root, path);
 	}
 	else
-		targetPath = joinPaths(_root, request.path);
+		targetPath = joinPaths(_root, path);
 	return targetPath;
 }
 

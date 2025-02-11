@@ -6,7 +6,7 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:19:43 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/10 17:01:04 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/11 15:20:54 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ HttpResponse Server::genPostResponse(HttpRequest const &request, Location const 
 {
 	HttpResponse response;
 
-	std::string targetPath = buildFilePath(request, location);
+	std::string targetPath = buildFilePath(request.path, location);
 	std::cout << "targetPath: " << targetPath << std::endl;
 	
 	// Controlla che il path sia una directory
