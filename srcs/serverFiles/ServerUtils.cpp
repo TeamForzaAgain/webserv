@@ -6,7 +6,7 @@
 /*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:14:01 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/10 13:16:32 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/11 10:15:52 by tpicchio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,13 +28,16 @@ std::string Server::joinPaths(const std::string& root, const std::string& path) 
 
 std::string Server::findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const
 {
+	HttpResponse response;
 	std::string content;
 	std::string path;
 
 	for (std::vector<std::string>::const_iterator it = indexFiles.begin(); it != indexFiles.end(); ++it)
 	{
 		path = joinPaths(directory, *it);
-		content = readFileContent(path);
+		content = readFileContent(response, path);
+		if (response.contentType == "Unsupported Media Type")
+			return response.contentType;
 		if (!content.empty())
 			return content;
 	}
@@ -57,12 +60,49 @@ std::string Server::buildFilePath(HttpRequest const &request, Location const &lo
 	return targetPath;
 }
 
-std::string Server::readFileContent(const std::string &filePath) const
+std::string setContentType(std::string const &extension)
+{
+	if (extension == "html" || extension == "htm")
+		return "text/html";
+	else if (extension == "css")
+		return "text/css";
+	else if (extension == "js")
+		return "text/javascript";
+	else if (extension == "jpg" || extension == "jpeg")
+		return "image/jpeg";
+	else if (extension == "png" || extension == "ico")
+		return "image/png";
+	else if (extension == "gif")
+		return "image/gif";
+	else if (extension == "mp3")
+		return "audio/mpeg";
+	else if (extension == "wav")
+		return "audio/wav";
+	else if (extension == "mp4")
+		return "video/mp4";
+	else if (extension == "json")
+		return "application/json";
+	else if (extension == "pdf")
+		return "application/pdf";
+	else if (extension == "txt")
+		return "text/plain";
+	return "";
+}
+
+std::string Server::readFileContent(HttpResponse &response, std::string const &filePath) const
 {
 	std::ifstream file(filePath.c_str());
 	if (!file.is_open())
 		return "";
 	std::ostringstream contentStream;
+	std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
+	response.contentType = setContentType(extension);
+	std::cout <<CYAN<< "Content-Type: " << response.contentType <<RESET<< std::endl;
+	if (response.contentType.empty())
+	{
+		file.close();
+		return "Unsupported Media Type";
+	}
 	contentStream << file.rdbuf();
 	file.close();
 	return contentStream.str();

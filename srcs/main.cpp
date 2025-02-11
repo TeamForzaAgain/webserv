@@ -14,40 +14,53 @@ ServerConfig fillServer1()
 	serverConfig.defLocation.path = "";
 	serverConfig.defLocation.root = "./html/";
 	serverConfig.defLocation.dirListing = true;
-	serverConfig.defLocation.errorPages[404] = "404.html";
-	serverConfig.defLocation.errorPages[403] = "403.html";
-	serverConfig.defLocation.errorPages[301] = "301.html";
+	serverConfig.defLocation.errorPages[301] = "/errorPages/301.html";
+	serverConfig.defLocation.errorPages[403] = "/errorPages/403.html";
+	serverConfig.defLocation.errorPages[404] = "/errorPages/404.html";
+	serverConfig.defLocation.errorPages[405] = "/errorPages/405.html";
+	serverConfig.defLocation.errorPages[415] = "/errorPages/415.html";
 
 	Location location;
-	location.path = "/server1/";
-    location.root = "";
-	location.dirListing = true;
-	location.isAlias = false;
-	location.indexFiles.push_back("info.html");
+	location.path = "/";
+	location.root = "./html/";
+	location.dirListing = false;
 	location.allowedMethods = (Methods){true, false, false};
-	location.errorPages[404] = "404.html";
-	location.errorPages[403] = "403.html";
-	location.errorPages[301] = "301.html";
+	location.isAlias = false;
 	serverConfig.locations.push_back(location);
 
-
 	Location location2;
-	location2.path = "/";
-	location2.root = "./html/";
+	location2.path = "/server1/";
+    location2.root = "";
 	location2.dirListing = true;
+	location2.isAlias = false;
 	location2.indexFiles.push_back("welcome.html");
-	location2.allowedMethods = (Methods){true, true, true};
-	location2.isAlias = true;
+	location2.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location2);
 
 	Location location3;
-	location3.path = "/favicon.ico";
-	location3.root = "./html/";
-	location3.dirListing = false;
-	location3.indexFiles.push_back("favicon.ico");
+	location3.path = "/testAlias/";
+    location3.root = "./html/server2/";
+	location3.dirListing = true;
+	location3.isAlias = true;
+	location3.indexFiles.push_back("welcome.html");
 	location3.allowedMethods = (Methods){true, false, false};
-	location3.isAlias = false;
 	serverConfig.locations.push_back(location3);
+
+	Location location4;
+	location4.path = "/testListDir/";
+    location4.root = "./html/server1/test_extensions/";
+	location4.dirListing = true;
+	location4.isAlias = true;
+	location4.allowedMethods = (Methods){true, false, false};
+	serverConfig.locations.push_back(location4);
+
+	Location location5;
+	location5.path = "/upload/";
+    location5.root = "";
+	location5.dirListing = false;
+	location5.isAlias = false;
+	location5.allowedMethods = (Methods){false, true, true};
+	serverConfig.locations.push_back(location5);
 
 	return serverConfig;
 }
@@ -59,17 +72,25 @@ ServerConfig fillServer2()
 	serverConfig.hostName = "Server2";
 
 	serverConfig.defLocation.path = "";
-	serverConfig.defLocation.root = "./";
+	serverConfig.defLocation.root = "./html/";
 	serverConfig.defLocation.dirListing = true;
 
 	Location location;
-	location.path = "/server2/";
-    location.root = "/html/";
-	location.dirListing = true;
-	location.indexFiles.push_back("welcome.html");
+	location.path = "/";
+	location.root = "./html/";
+	location.dirListing = false;
 	location.allowedMethods = (Methods){true, false, false};
 	location.isAlias = false;
 	serverConfig.locations.push_back(location);
+
+	Location location2;
+	location2.path = "/server2/";
+    location2.root = "/html/";
+	location2.dirListing = true;
+	location2.indexFiles.push_back("welcome.html");
+	location2.allowedMethods = (Methods){true, false, false};
+	location2.isAlias = false;
+	serverConfig.locations.push_back(location2);
 	return serverConfig;
 }
 

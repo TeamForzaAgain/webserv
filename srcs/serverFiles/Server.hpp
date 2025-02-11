@@ -18,6 +18,7 @@ class Server
 		std::string genResponse(HttpRequest const &request) const;
 		HttpResponse genGetResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genPostResponse(HttpRequest const &request, Location const &location) const;
+		HttpResponse genDeleteResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genErrorPage(Location const &location, int code, std::string const &message) const;
 		HttpResponse genDirListing(std::string const &path, Location const &location) const;
 		
@@ -25,7 +26,7 @@ class Server
 		Location findLocation(HttpRequest const &request) const;
 		std::string buildFilePath(HttpRequest const &request, Location const &location) const;
 		std::string joinPaths(const std::string& root, const std::string& path) const;
-		std::string readFileContent(const std::string &filePath) const;
+		std::string readFileContent(HttpResponse &response, std::string const &filePath) const;
 		std::string findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const;
 
 	private:
