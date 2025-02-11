@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DeleteMethod.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/11 12:04:04 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 13:22:51 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/11 15:39:11 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location const &location) const
 {
 	HttpResponse response;
-	std::string targetPath = buildFilePath(request, location);
+	std::string targetPath = buildFilePath(request.path, location);
 
 	if (targetPath[targetPath.size() - 1] == '/')
 	{
