@@ -6,7 +6,7 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:05:01 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 15:20:44 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/11 15:38:02 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ HttpResponse Server::genDirListing(std::string const &path, Location const &loca
 	dir = opendir(path.c_str());
 	if (dir == NULL)
 	{
-		return genErrorPage(location, 403, "Forbidden");
+		return genErrorPage(location, 404, "Not Found");
 	}
 	oss << "<!DOCTYPE html>"
 		<< "<html lang=\"en\">"
@@ -56,6 +56,7 @@ HttpResponse Server::genDirListing(std::string const &path, Location const &loca
 		<< "</html>";
 	response.statusCode = 200;
 	response.statusMessage = "OK";
+	response.contentType = "text/html";
 	response.body = oss.str();
 	closedir(dir);
 	return response;
@@ -74,7 +75,10 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 		if (response.body.empty())
 			response.body = findIndexFileContent(targetPath, _defIndexFiles);
 		if (response.body.empty())
-			response.body = readFileContent(joinPaths(targetPath, "index.html"));
+			response.body = readFileContent(response, joinPaths(targetPath, "index.html"));
+
+		if (response.body == "Unsupported Media Type")
+			return genErrorPage(location, 415, "Unsupported Media Type");
 
 		if (!response.body.empty())
 		{
@@ -84,6 +88,10 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 		else if (location.dirListing)
 		{
 			response = genDirListing(targetPath, location);
+		}
+		else if (opendir(targetPath.c_str()) == NULL)
+		{
+			response = genErrorPage(location, 404, "Not Found");
 		}
 		else
 		{
@@ -97,7 +105,9 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 		{
 			return genErrorPage(location, 301, "Moved Permanently");
 		}
-		response.body = readFileContent(targetPath);
+		response.body = readFileContent(response, targetPath);
+		if (response.body == "Unsupported Media Type")
+			return genErrorPage(location, 415, "Unsupported Media Type");
 		if (response.body.empty())
 		{
 			response = genErrorPage(location, 404, "Not Found");

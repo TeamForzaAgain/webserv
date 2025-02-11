@@ -86,7 +86,8 @@ struct HttpResponse
 {
     int statusCode;                          // 200, 404, 500, etc.
     std::string statusMessage;               // "OK", "Not Found", "Internal Server Error"
-    std::string body;                         // Contenuto della risposta
+    std::string contentType;                 // "text/html", "image/jpeg", "application/json"
+	std::string body;                         // Contenuto della risposta
 
     std::string toString() const; // Converte la risposta in stringa HTTP
 };

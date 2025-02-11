@@ -6,7 +6,7 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:23:12 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 15:29:45 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/11 15:38:17 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ _errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locati
 	}		
 }
 
-std::string genDefaultErrorPage(int code, const std::string& message)
+std::string genDefaultErrorPage(HttpResponse &response, int code, const std::string& message)
 {
 	std::ostringstream oss;
 
@@ -47,6 +47,7 @@ std::string genDefaultErrorPage(int code, const std::string& message)
 		<< "    <center>webzerv/TeamForzaAgain</center>\n"
 		<< "</body>\n"
 		<< "</html>\n";
+	response.contentType = "text/html";
 	return oss.str();
 }
 
@@ -58,6 +59,7 @@ HttpResponse Server::genErrorPage(const Location &location, int code, const std:
 
 	response.statusCode = code;
 	response.statusMessage = message;
+	response.contentType = "text/html";
 	// Verifica se la location ha una pagina di errore personalizzata
 	std::map<int, std::string>::const_iterator it = location.errorPages.find(code);
 	if (it != location.errorPages.end())
@@ -80,13 +82,13 @@ HttpResponse Server::genErrorPage(const Location &location, int code, const std:
 	}
 
 	if (hasCustomPage)
-		response.body = readFileContent(filePath);
-	if (response.body.empty())
-		response.body = genDefaultErrorPage(code, message);
+		response.body = readFileContent(response, filePath);
+	if (response.contentType == "Unsupported Media Type")
+		response = genErrorPage(location, 415, "Unsupported Media Type");
+	if (response.body.empty() || response.contentType != "text/html")
+		response.body = genDefaultErrorPage(response, code, message);
 	return response;
 }
-
-
 
 bool isMethodAllowed(const Location &location, const std::string &method)
 {
@@ -113,8 +115,8 @@ std::string Server::genResponse(HttpRequest const &request) const
 		response = genGetResponse(request, location);
 	if (request.method == "POST")
 		response = genPostResponse(request, location);
-	// else if (request.method == "DELETE")
-	// 	response = genDeleteResponse(request);
+	else if (request.method == "DELETE")
+		response = genDeleteResponse(request, location);
 
     return response.toString();
 }

@@ -103,7 +103,7 @@ std::string HttpResponse::toString() const
 	
 	requestStream << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
 	requestStream << "Server: webzerv/TeamForzaAgain\r\n";
-	requestStream << "Content-Type: text/html\r\n";
+	requestStream << "Content-Type: " << contentType << "\r\n";
 	requestStream << "Content-Length: " << body.size() << "\r\n";
 	requestStream << "\r\n";
 	requestStream << body;
