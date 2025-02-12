@@ -13,8 +13,8 @@ class Server
 		std::string getServerName() const { return _hostName; }
 		Server const *getServer() const { return this; }
 		ListeningSocket *getListeningSocket() const { return _ls; }
-		std::string getUploadDir() const { return _uploadDir; }
 		bool operator<(const Server &other) const { return _hostName < other._hostName; }
+		Location const *getUploadLocation() const;
 
 		std::string genResponse(HttpRequest const &request) const;
 		HttpResponse genGetResponse(HttpRequest const &request, Location const &location) const;
@@ -34,7 +34,6 @@ class Server
 		ListeningSocket				*_ls;
 		std::string					_hostName;
 		std::string					_root;
-		std::string					_uploadDir;
 		std::vector<std::string>	_defIndexFiles;
 		bool 						_defDirListing;
 		std::map<int, std::string>	_errorPages;
