@@ -1,7 +1,7 @@
 import requests
 
 # Configurazione
-SERVER_URL = "http://localhost:8080/goku/evcecvevcre.png"  # Modifica con il tuo server
+SERVER_URL = "http://localhost:8080/html/"  # Modifica con il tuo server
 FILE_PATH = "goku.png"  # Il file da inviare
 
 def upload_file():

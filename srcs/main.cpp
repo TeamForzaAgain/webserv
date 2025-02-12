@@ -24,7 +24,7 @@ ServerConfig fillServer1()
 	location.path = "/";
 	location.root = "./html/";
 	location.dirListing = false;
-	location.allowedMethods = (Methods){true, false, false};
+	location.allowedMethods = (Methods){true, true, false};
 	location.isAlias = false;
 	location.upload = false;
 	serverConfig.locations.push_back(location);
@@ -54,7 +54,7 @@ ServerConfig fillServer1()
 	location5.dirListing = false;
 	location5.isAlias = false;
 	location5.upload = true;
-	location5.allowedMethods = (Methods){false, true, true};
+	location5.allowedMethods = (Methods){true, true, true};
 	serverConfig.locations.push_back(location5);
 
 	return serverConfig;

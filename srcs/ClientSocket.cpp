@@ -136,13 +136,16 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             if (!location)
                 return -1;
             if (_request.path.find(location->path) != 0)
-                return -1;
-            std::string filePath = _server->buildFilePath(_request.path, *location) + filename;
-            _uploadFile.open(filePath.c_str(), std::ios::binary);
-            if (!_uploadFile)
+                _isMultipart = false;
+            else
             {
-                perror(strerror(errno));
-                return -1;
+                std::string filePath = _server->buildFilePath(_request.path, *location) + filename;
+                _uploadFile.open(filePath.c_str(), std::ios::binary);
+                if (!_uploadFile)
+                {
+                    perror(strerror(errno));
+                    return -1;
+                }
             }
         } 
     }

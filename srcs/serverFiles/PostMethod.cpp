@@ -6,7 +6,7 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:19:43 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 15:20:54 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/12 13:07:50 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,63 +17,44 @@ HttpResponse Server::genPostResponse(HttpRequest const &request, Location const 
 	HttpResponse response;
 
 	std::string targetPath = buildFilePath(request.path, location);
-	std::cout << "targetPath: " << targetPath << std::endl;
 	
-	// Controlla che il path sia una directory
-	struct stat st;
-	/* if (stat(targetPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+	//controlla se la location e' quella di upload usando getUploadLocation()
+	Location const *uploadLocation = getUploadLocation();
+	if (uploadLocation && uploadLocation->path == location.path)
 	{
-
-		response.body = genErrorPage(response.location, 301, "Moved Permanently");
-		response.statusCode = 301;
-		response.statusMessage = "Moved Permanently";
-		return response;
-	} */
-	// Controlla se il Content-Type è multipart/form-data
-	if (request.headers.find("Content-Type") != request.headers.end() &&
-		request.headers.find("Content-Type")->second.find("multipart/form-data") != std::string::npos)
-	{
-		if (request.headers.find("filename") != request.headers.end())
+		std::string filename;
+		std::map<std::string, std::string>::const_iterator it = request.headers.find("filename");
+		if (it != request.headers.end()) 
+    		filename = it->second;
+		else
+			filename = "uploaded_file.bin";
+		
+		//controlla se il file e' stato auploadatp correttamente
+		struct stat buffer;
+		if (stat(targetPath.c_str(), &buffer) == 0)
 		{
-			std::string filename = request.headers.find("filename")->second;
-			std::string sourcePath = "./uploads/" + filename;
-
-			// Controlla che il file esista
-			if (stat(sourcePath.c_str(), &st) != 0)
-			{
-				return genErrorPage(location, 404, "File Not Found");
-			}
-
-			// Creazione del processo figlio
-			pid_t pid = fork();
-			if (pid == -1)
-			{
-				return genErrorPage(location, 500, "Internal Server Error");
-			}
-			else if (pid == 0) // Processo figlio
-			{
-				// Esegui mv per spostare il file
-				char *args[] = {(char *)"/bin/mv", (char *)sourcePath.c_str(), (char *)targetPath.c_str(), NULL};
-				execve("/bin/mv", args, NULL);
-				_exit(1); // Se execve fallisce
-			}
-			else // Processo padre
-			{
-				int status;
-				waitpid(pid, &status, 0);
-				if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-				{
-					response.body = "File uploaded successfully.";
-					response.statusCode = 200;
-					response.statusMessage = "OK";
-				}
-				else
-				{
-					response = genErrorPage(location, 500, "Internal Server Error");
-				}
-			}
+			//il file e' stato caricato correttamente
+			response.statusCode = 201;
+			response.statusMessage = "Created";
+			response.contentType = "text/html";
+			response.body = "<html><body><h1>File Uploaded Successfully</h1></body></html>";
+		}
+		else
+		{
+			//il file non e' stato caricato correttamente
+			response.statusCode = 500;
+			response.statusMessage = "Internal Server Error";
+			response.contentType = "text/html";
+			response.body = "<html><body><h1>Internal Server Error</h1></body></html>";
 		}
 	}
-
+	else
+	{
+		//la location non e' quella di upload
+		response = genErrorPage(location, 403, "Forbidden");
+	}
+	
 	return response;
+		
+	
 }
