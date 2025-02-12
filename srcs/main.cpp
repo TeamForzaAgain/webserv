@@ -30,11 +30,11 @@ ServerConfig fillServer1()
 	serverConfig.locations.push_back(location);
 
 	Location location2;
-	location2.path = "/server1/";
-    location2.root = "";
+	location2.path = "/testAlias/";
+    location2.root = "./html/server2/";
 	location2.dirListing = true;
-	location2.isAlias = false;
 	location2.upload = false;
+	location2.isAlias = true;
 	location2.indexFiles.push_back("welcome.html");
 	location2.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location2);
