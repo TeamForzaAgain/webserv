@@ -21,43 +21,51 @@ ServerConfig fillServer1()
 	serverConfig.defLocation.errorPages[415] = "/errorPages/415.html";
 
 	Location location;
-	location.path = "/server1/";
-    location.root = "";
-	location.dirListing = true;
-	location.upload = false;
-	location.isAlias = false;
-	location.indexFiles.push_back("info.html");
+	location.path = "/";
+	location.root = "./html/";
+	location.dirListing = false;
 	location.allowedMethods = (Methods){true, false, false};
 	location.isAlias = false;
+	location.upload = false;
 	serverConfig.locations.push_back(location);
 
 	Location location2;
 	location2.path = "/server1/";
     location2.root = "";
 	location2.dirListing = true;
-	location2.upload = false;
 	location2.isAlias = false;
+	location2.upload = false;
 	location2.indexFiles.push_back("welcome.html");
 	location2.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location2);
 
 	Location location3;
-	location3.path = "/favicon.ico";
-	location3.root = "./html/";
-	location3.dirListing = false;
+	location3.path = "/testAlias/";
+    location3.root = "./html/server2/";
+	location3.dirListing = true;
+	location3.isAlias = true;
 	location3.upload = false;
-	location3.indexFiles.push_back("favicon.ico");
+	location3.indexFiles.push_back("welcome.html");
 	location3.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location3);
 
 	Location location4;
-	location4.path = "/upload/";
-	location4.root = "./html/";
+	location4.path = "/testListDir/";
+    location4.root = "./html/server1/test_extensions/";
 	location4.dirListing = true;
-	location4.upload = true;
-	location4.allowedMethods = (Methods){true, true, true};
-	location4.isAlias = false;
+	location4.isAlias = true;
+	location4.upload = false;
+	location4.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location4);
+
+	Location location5;
+	location5.path = "/upload/";
+    location5.root = "";
+	location5.dirListing = false;
+	location5.isAlias = false;
+	location5.upload = true;
+	location5.allowedMethods = (Methods){false, true, true};
+	serverConfig.locations.push_back(location5);
 
 	return serverConfig;
 }
