@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DeleteMethod.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/11 12:04:04 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 15:39:11 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/12 13:10:54 by tpicchio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,19 @@ HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location cons
 
 	if (targetPath[targetPath.size() - 1] == '/')
 	{
-		return genErrorPage(location, 403, "Forbidden");
+		if (location.path == getUploadLocation()->path)
+		{
+			response = genDirListing(targetPath, location);
+			std::cout << CYAN << "Body: " << response.body << RESET << std::endl;
+			return response;
+		}
+		response = genErrorPage(location, 403, "Forbidden");
+		return response;
 	}
-	if (targetPath.find("./html/upload/") != 0)
+	if (location.path != getUploadLocation()->path)
 	{
-		return genErrorPage(location, 403, "Forbidden");
+		response = genErrorPage(location, 403, "Forbidden");
+		return response;
 	}
 	if (std::remove(targetPath.c_str()) != 0)
 	{

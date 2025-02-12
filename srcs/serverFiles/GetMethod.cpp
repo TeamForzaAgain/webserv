@@ -6,7 +6,7 @@
 /*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:05:01 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/12 10:45:49 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/12 12:48:43 by tpicchio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,8 @@ HttpResponse Server::genDirListing(std::string const &path, Location const &loca
 	while ((ent = readdir(dir)) != NULL)
 	{
 		if (strcmp(ent->d_name, ".") == 0)
+			continue;
+		if (strcmp(ent->d_name, "..") == 0)
 			continue;
 		filePath = joinPaths(path, ent->d_name);
 		if (stat(filePath.c_str(), &st) == 0)

@@ -42,6 +42,12 @@
         input[type="file"] {
             margin: 10px 0;
         }
+        #fileList {
+            margin-top: 20px;
+            display: none;
+        }
+        ul { list-style: none; padding: 0; }
+        li { margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -56,97 +62,112 @@
         <h2>File Upload</h2>
         <form id="uploadForm" method="POST" action="http://localhost:8080/upload/" enctype="multipart/form-data">
             <label for="fileInput">Choose file to upload:</label>
+			<br>
             <input type="file" id="fileInput" name="file" required>
             <br>
             <button type="submit">Upload File</button>
         </form>
 
         <h2>File Deletion</h2>
-        <form id="deleteForm">
-            <label for="fileDeleteInput">Choose an uploaded file to delete:</label>
-            <input type="file" id="fileDeleteInput" name="fileToDelete" required>
-            <br>
-            <button type="button" id="deleteButton">Delete File</button>
-        </form>
+        <button id="deleteFilesBtn">Delete Uploaded Files</button>
+
+        <div id="fileList">
+            <h2>Select a file to delete</h2>
+            <ul id="files"></ul>
+        </div>
     </div>
 
     <script>
         // Handle file upload form submission
-		document.addEventListener("DOMContentLoaded", function() {
-			document.getElementById("fileInput").value = "";
-			document.getElementById("fileDeleteInput").value = "";
-		});	
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("fileInput").value = "";
+        });  
         document.getElementById('uploadForm').addEventListener('submit', function(event) {
-			event.preventDefault();
-			
-			var fileInput = document.getElementById('fileInput');
-			if (!fileInput.files.length) {
-				alert('Please select a file to upload.');
-				return;
-			}
+            event.preventDefault();
+            
+            var fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select a file to upload.');
+                return;
+            }
 
-			var formData = new FormData();
-			formData.append('file', fileInput.files[0]);
+            var formData = new FormData();
+            formData.append('file', fileInput.files[0]);
 
-			fetch('http://localhost:8080/upload/', {
-				method: 'POST',
-				body: formData
-			})
-			.then(response => {
-				if (!response.ok) {
-					throw new Error(`HTTP error! Status: ${response.status}`);
+            fetch('http://localhost:8080/upload/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();  // Cambiato da .json() a .text()
+            })
+            .then(data => {
+                alert('File uploaded successfully!');
+                console.log(data);
+                fileInput.value = "";
+            })
+            .catch(error => {
+                alert(`Error uploading file! ${error.message}`);
+                console.error(error);
+                fileInput.value = "";
+            });
+        });
+
+        document.getElementById('deleteFilesBtn').addEventListener('click', function() {
+		fetch('http://localhost:8080/upload/', { method: 'DELETE' })
+		.then(response => response.text()) // Server responds with HTML (list of files)
+		.then(html => {
+			document.getElementById('fileList').style.display = 'block';
+			document.getElementById('files').innerHTML = parseFileList(html); // Convert HTML list to buttons
+			addDeleteListeners();  // Add delete listeners
+		})
+		.catch(error => console.error('Error fetching file list:', error));
+	});
+
+	// Parse the HTML response from the server and generate delete buttons
+	function parseFileList(html) {
+		let parser = new DOMParser();
+		let doc = parser.parseFromString(html, 'text/html');
+		let fileLinks = doc.querySelectorAll('a');  // Get all the links (file names)
+
+		let fileListHtml = '<ul>';
+		fileLinks.forEach(link => {
+			let fileName = link.getAttribute('href');
+			fileListHtml += `
+				<li>
+					${fileName} <button class="delete-btn" data-filename="${fileName}">Delete</button>
+				</li>`;
+		});
+		fileListHtml += '</ul>';
+
+		return fileListHtml;
+	}
+
+	// Add delete listeners to each file in the list
+	function addDeleteListeners() {
+		document.querySelectorAll('.delete-btn').forEach(button => {
+			button.addEventListener('click', function() {
+				let fileName = this.dataset.filename;
+				if (confirm('Do you want to delete ' + fileName + '?')) {
+					fetch('http://localhost:8080/upload/' + encodeURIComponent(fileName), { method: 'DELETE' })
+					.then(response => {
+						if (response.ok) {
+							alert('File deleted!');
+							this.parentElement.remove(); // Remove file from list
+						} else {
+							alert('Error deleting file!');
+						}
+					})
+					.catch(error => console.error('Error deleting file:', error));
 				}
-				return response.text();  // Cambiato da .json() a .text()
-			})
-			.then(data => {
-				alert('File uploaded successfully!');
-				console.log(data);
-				fileInput.value = "";
-			})
-			.catch(error => {
-				alert(`Error uploading file! ${error.message}`);
-				console.error(error);
-				fileInput.value = "";
 			});
 		});
+	}
 
-
-        // Handle file deletion
-        document.getElementById('deleteButton').addEventListener('click', function() {
-			var fileInput = document.getElementById('fileDeleteInput');
-			var fileToDelete = fileInput.files[0];
-
-			if (!fileToDelete) {
-				alert('Please choose a file to delete.');
-				return;
-			}
-
-			var fileName = encodeURIComponent(fileToDelete.name);
-			var url = `http://localhost:8080/upload/${fileName}`;
-
-			fetch(url, {
-				method: 'DELETE',
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			})
-			.then(response => {
-				if (!response.ok) {
-					throw new Error(`HTTP error! Status: ${response.status}`);
-				}
-				return response.text();  // Cambiato da .json() a .text()
-			})
-			.then(data => {
-				alert('File deleted successfully!');
-				console.log(data);
-				fileInput.value = "";
-			})
-			.catch(error => {
-				alert(`Error deleting file! ${error.message}`);
-				console.error(error);
-				fileInput.value = "";
-			});
-		});
     </script>
+
 </body>
 </html>
