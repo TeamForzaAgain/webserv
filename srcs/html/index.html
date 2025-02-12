@@ -63,7 +63,7 @@
 
         <h2>File Deletion</h2>
         <form id="deleteForm">
-            <label for="fileDeleteInput">Choose file to delete:</label>
+            <label for="fileDeleteInput">Choose an uploaded file to delete:</label>
             <input type="file" id="fileDeleteInput" name="fileToDelete" required>
             <br>
             <button type="button" id="deleteButton">Delete File</button>
@@ -72,26 +72,44 @@
 
     <script>
         // Handle file upload form submission
+		document.addEventListener("DOMContentLoaded", function() {
+			document.getElementById("fileInput").value = "";
+			document.getElementById("fileDeleteInput").value = "";
+		});	
         document.getElementById('uploadForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            var formData = new FormData();
-            var fileInput = document.getElementById('fileInput');
-            formData.append('file', fileInput.files[0]);
+			event.preventDefault();
+			
+			var fileInput = document.getElementById('fileInput');
+			if (!fileInput.files.length) {
+				alert('Please select a file to upload.');
+				return;
+			}
 
-            fetch('http://localhost:8080/upload/', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('File uploaded successfully!');
-                console.log(data);
-            })
-            .catch(error => {
-                alert('Error uploading file!');
-                console.error(error);
-            });
-        });
+			var formData = new FormData();
+			formData.append('file', fileInput.files[0]);
+
+			fetch('http://localhost:8080/upload/', {
+				method: 'POST',
+				body: formData
+			})
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! Status: ${response.status}`);
+				}
+				return response.text();  // Cambiato da .json() a .text()
+			})
+			.then(data => {
+				alert('File uploaded successfully!');
+				console.log(data);
+				fileInput.value = "";
+			})
+			.catch(error => {
+				alert(`Error uploading file! ${error.message}`);
+				console.error(error);
+				fileInput.value = "";
+			});
+		});
+
 
         // Handle file deletion
         document.getElementById('deleteButton').addEventListener('click', function() {
@@ -103,7 +121,6 @@
 				return;
 			}
 
-			// Aggiungi il nome del file nell'URL
 			var fileName = encodeURIComponent(fileToDelete.name);
 			var url = `http://localhost:8080/upload/${fileName}`;
 
@@ -113,14 +130,21 @@
 					'Content-Type': 'application/json'
 				}
 			})
-			.then(response => response.json())
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! Status: ${response.status}`);
+				}
+				return response.text();  // Cambiato da .json() a .text()
+			})
 			.then(data => {
 				alert('File deleted successfully!');
 				console.log(data);
+				fileInput.value = "";
 			})
 			.catch(error => {
-				alert('Error deleting file!');
+				alert(`Error deleting file! ${error.message}`);
 				console.error(error);
+				fileInput.value = "";
 			});
 		});
     </script>

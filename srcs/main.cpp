@@ -21,14 +21,12 @@ ServerConfig fillServer1()
 	serverConfig.defLocation.errorPages[415] = "/errorPages/415.html";
 
 	Location location;
-	location.path = "/server1/";
-    location.root = "";
-	location.dirListing = true;
-	location.upload = false;
-	location.isAlias = false;
-	location.indexFiles.push_back("info.html");
+	location.path = "/";
+	location.root = "./html/";
+	location.dirListing = false;
 	location.allowedMethods = (Methods){true, false, false};
 	location.isAlias = false;
+	location.upload = false;
 	serverConfig.locations.push_back(location);
 
 	Location location2;
@@ -41,23 +39,23 @@ ServerConfig fillServer1()
 	location2.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location2);
 
-	Location location3;
-	location3.path = "/";
-	location3.root = "./html/";
-	location3.dirListing = false;
-	location3.isAlias = false;
-	location3.upload = false;
-	location3.allowedMethods = (Methods){true, false, false};
-	serverConfig.locations.push_back(location3);
-
 	Location location4;
-	location4.path = "/upload/";
-	location4.root = "./html/";
+	location4.path = "/delete/";
+    location4.root = "./html/upload/";
 	location4.dirListing = true;
-	location4.upload = true;
-	location4.allowedMethods = (Methods){true, true, true};
-	location4.isAlias = false;
+	location4.isAlias = true;
+	location4.upload = false;
+	location4.allowedMethods = (Methods){true, false, true};
 	serverConfig.locations.push_back(location4);
+
+	Location location5;
+	location5.path = "/upload/";
+    location5.root = "";
+	location5.dirListing = false;
+	location5.isAlias = false;
+	location5.upload = true;
+	location5.allowedMethods = (Methods){false, true, true};
+	serverConfig.locations.push_back(location5);
 
 	return serverConfig;
 }
