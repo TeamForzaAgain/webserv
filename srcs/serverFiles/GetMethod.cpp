@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GetMethod.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:05:01 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 15:38:02 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/12 10:45:49 by tpicchio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,8 +72,8 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 	if (targetPath[targetPath.size() - 1] == '/')
 	{
 		response.body = findIndexFileContent(targetPath, location.indexFiles);
-		if (response.body.empty())
-			response.body = findIndexFileContent(targetPath, _defIndexFiles);
+		// if (response.body.empty())
+		// 	response.body = findIndexFileContent(targetPath, _defIndexFiles);
 		if (response.body.empty())
 			response.body = readFileContent(response, joinPaths(targetPath, "index.html"));
 

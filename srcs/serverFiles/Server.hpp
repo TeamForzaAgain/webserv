@@ -14,6 +14,7 @@ class Server
 		Server const *getServer() const { return this; }
 		ListeningSocket *getListeningSocket() const { return _ls; }
 		std::string getUploadDir() const { return _uploadDir; }
+		Location const *getUploadLocation() const;
 		bool operator<(const Server &other) const { return _hostName < other._hostName; }
 
 		std::string genResponse(HttpRequest const &request) const;

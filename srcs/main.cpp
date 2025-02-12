@@ -39,23 +39,13 @@ ServerConfig fillServer1()
 	location2.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location2);
 
-	Location location3;
-	location3.path = "/testAlias/";
-    location3.root = "./html/server2/";
-	location3.dirListing = true;
-	location3.isAlias = true;
-	location3.upload = false;
-	location3.indexFiles.push_back("welcome.html");
-	location3.allowedMethods = (Methods){true, false, false};
-	serverConfig.locations.push_back(location3);
-
 	Location location4;
-	location4.path = "/testListDir/";
-    location4.root = "./html/server1/test_extensions/";
+	location4.path = "/delete/";
+    location4.root = "./html/upload/";
 	location4.dirListing = true;
 	location4.isAlias = true;
 	location4.upload = false;
-	location4.allowedMethods = (Methods){true, false, false};
+	location4.allowedMethods = (Methods){true, false, true};
 	serverConfig.locations.push_back(location4);
 
 	Location location5;
