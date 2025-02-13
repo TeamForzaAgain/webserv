@@ -22,6 +22,8 @@ class Server
 		HttpResponse genDeleteResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genErrorPage(Location const &location, int code, std::string const &message) const;
 		HttpResponse genDirListing(std::string const &path, Location const &location) const;
+
+		HttpResponse execCgi(std::string const &targetPath, HttpRequest const &request) const;
 		
 		// Utility
 		Location findLocation(HttpRequest const &request) const;

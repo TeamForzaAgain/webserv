@@ -27,6 +27,7 @@ ServerConfig fillServer1()
 	location.allowedMethods = (Methods){true, true, false};
 	location.isAlias = false;
 	location.upload = false;
+	location.cgi = true;
 	serverConfig.locations.push_back(location);
 
 	Location location2;
@@ -35,6 +36,7 @@ ServerConfig fillServer1()
 	location2.dirListing = true;
 	location2.upload = false;
 	location2.isAlias = true;
+	location.cgi = false;
 	location2.indexFiles.push_back("welcome.html");
 	location2.allowedMethods = (Methods){true, false, false};
 	serverConfig.locations.push_back(location2);
@@ -45,15 +47,17 @@ ServerConfig fillServer1()
 	location4.dirListing = true;
 	location4.isAlias = true;
 	location4.upload = false;
-	location4.allowedMethods = (Methods){true, false, true};
+	location4.cgi = false;
+	location4.allowedMethods = (Methods){false, false, true};
 	serverConfig.locations.push_back(location4);
 
 	Location location5;
 	location5.path = "/upload/";
     location5.root = "";
-	location5.dirListing = false;
+	location5.dirListing = true;
 	location5.isAlias = false;
 	location5.upload = true;
+	location5.cgi = false;
 	location5.allowedMethods = (Methods){true, true, true};
 	serverConfig.locations.push_back(location5);
 

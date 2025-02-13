@@ -57,7 +57,8 @@ struct Location
     std::string path;                           // "/images", "/upload", "/" (default)
     std::string root;                           // "/var/www/site1"
     bool dirListing;                            // true → mostra il contenuto della directory se non c'è un default file
-    bool upload;                                // true → se la location è per l'upload di file  
+    bool upload;                                // true → se la location è per l'upload di file
+    bool cgi;                                   // true → se la location è per l'esecuzione di script CGI
     std::vector<std::string> indexFiles;        // {"index.html", "index.htm", "default.html"}
     Methods allowedMethods;                     // {"GET", "POST", "DELETE"}
 	bool isAlias;                               // true → se la location è un alias
