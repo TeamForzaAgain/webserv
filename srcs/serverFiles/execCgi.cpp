@@ -67,6 +67,38 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         int status;
         waitpid(pid, &status, 0);
 
+        // Se il processo figlio è terminato in modo anomalo
+        if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+        {
+            response = genErrorPage(Location(), 500, "Internal Server Error");
+            return response;
+        }
+
+        // controlla se la risposta è vuota restituisci 204
+        if (cgiOutput.empty())
+        {
+            response.statusCode = 204;
+            response.statusMessage = "No Content";
+            return response;
+        }
+
+        // estrae il Content-Type dalla risposta CGI
+        size_t headerEnd = cgiOutput.find("\r\n\r\n");
+        if (headerEnd != std::string::npos)
+        {
+            // Trova il Content-Type
+            size_t ctPos = cgiOutput.find("Content-Type:");
+            if (ctPos != std::string::npos)
+            {
+                size_t ctEnd = cgiOutput.find("\r\n", ctPos);
+                if (ctEnd != std::string::npos)
+                    response.contentType = cgiOutput.substr(ctPos + 13, ctEnd - (ctPos + 13));
+            }
+        
+            // Rimuove gli header dall'output CGI
+            cgiOutput = cgiOutput.substr(headerEnd + 4);
+        }
+
         response.statusCode = 200;
         response.statusMessage = "OK";
         response.body = cgiOutput;

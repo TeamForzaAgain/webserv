@@ -5,10 +5,8 @@ import sys
 import json
 import random
 
-import sys
 sys.stderr.write("DEBUG: Lo script è stato avviato!\n")
 sys.stderr.flush()
-
 
 # Funzione per calcolare il danno di un attacco
 def calcola_danno(attaccante, mossa):
@@ -61,13 +59,19 @@ try:
     request_data = json.loads(request_body)
 except Exception as e:
     request_data = {}
-    print("Content-Type: application/json\n")
-    print(json.dumps({"error": "Errore nella lettura della richiesta", "message": str(e)}))
+
+    # Header HTTP formattati correttamente
+    sys.stdout.write("Status: 400 Bad Request\r\n")
+    sys.stdout.write("Content-Type: application/json\r\n")
+    sys.stdout.write("\r\n")  # Separazione header-body
+    sys.stdout.write(json.dumps({"error": "Errore nella lettura della richiesta", "message": str(e)}, indent=4) + "\n")
     sys.exit(1)
 
 # **Esegui la battaglia Pokémon**
 risultato = battaglia_pokemon(request_data)
 
-# **Stampa l'output CGI**
-print("Content-Type: application/json\n")
-print(json.dumps(risultato, indent=4))
+# **Stampa l'output CGI con header formattati**
+sys.stdout.write("Status: 200 OK\r\n")
+sys.stdout.write("Content-Type: application/json\r\n")
+sys.stdout.write("\r\n")  # Separazione header-body
+sys.stdout.write(json.dumps(risultato, indent=4) + "\n")
