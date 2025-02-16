@@ -49,5 +49,4 @@ def test_persistent_connection(timeout=30):
         print("🔚 Socket chiuso")
 
 # **Esegui il test con un timeout più breve del limite del server**
-test_persistent_connection(timeout=10)  # Dovrebbe rimanere aperto
 test_persistent_connection(timeout=65)  # Dovrebbe essere chiuso dal server

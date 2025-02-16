@@ -115,6 +115,8 @@ void ServerManager::readClient(size_t &i)
 {
     std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
 
+
+
     char tempBuffer[BUFFERSIZE];
     int bytesRead = recv(_pollfds[i].fd, tempBuffer, BUFFERSIZE - 1, 0);
 
@@ -138,6 +140,8 @@ void ServerManager::readClient(size_t &i)
         _pollfds[i].events = POLLIN;
     else if (_clientSockets[_pollfds[i].fd]->getStatus() == 1 || _clientSockets[_pollfds[i].fd]->getStatus() == -1)
         _pollfds[i].events = POLLOUT;
+    
+    _clientSockets[_pollfds[i].fd]->setLastActivity();
 }
 
 void ServerManager::writeClient(size_t &i)
@@ -166,7 +170,7 @@ void ServerManager::run()
     while (true)
     {
         std::cout << RED << "Polling..." << RESET << std::endl;
-        int activity = poll(_pollfds.data(), _pollfds.size(), -1);
+        int activity = poll(_pollfds.data(), _pollfds.size(), 10000);
 
         if (activity == -1)
         {
@@ -189,6 +193,12 @@ void ServerManager::run()
         {
             if (_pollfds[i].revents & (POLLHUP | POLLERR))
                 closeClient(i);
+
+            else if (_pollfds[i].revents == 0 &&_clientSockets[_pollfds[i].fd]->getLastActivity() + 30 < time(NULL))
+            {
+                std::cout << MAGENTA << "Client timeout, closing socket " << _pollfds[i].fd << RESET << std::endl;
+                closeClient(i);
+            }
 
             else if (_pollfds[i].revents & POLLIN)
                 readClient(i);

@@ -1,8 +1,8 @@
 #include "ServerManager.hpp"
 
 ClientSocket::ClientSocket(int fd, Server const *server) : Socket(fd),  _server(server),
-        _status(1), _keepAlive(false), _contentLength(0), _chunkLength(-1), _headersLenght(0),
-        _isMultipart(false)
+        _status(1), _lastActivity(time(NULL)), _keepAlive(false), _contentLength(0), _chunkLength(-1), _headersLenght(0),
+        _toUpload(false)
 {}
 
 ClientSocket::~ClientSocket()
@@ -23,9 +23,19 @@ int ClientSocket::getStatus() const
     return _status;
 }
 
+time_t ClientSocket::getLastActivity() const
+{
+    return _lastActivity;
+}
+
 void ClientSocket::addBuffer(const char *buffer, int bytesRead)
 {
     _buffer.insert(_buffer.end(), buffer, buffer + bytesRead);
+}
+
+void ClientSocket::setLastActivity()
+{
+    _lastActivity = time(NULL);
 }
 
 int ClientSocket::parseRequest(ServerManager &serverManager)
@@ -41,7 +51,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         _headersLenght = 0;
         _contentLength = 0;
         _bytesWritten = 0;
-        _isMultipart = false;
+        _toUpload = false;
         
         std::string requestStr(requestBuffer.begin(), requestBuffer.end());
         size_t headerEnd = requestStr.find("\r\n\r\n");
@@ -85,7 +95,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         it = _request.headers.find("Content-Type");
         if (it != _request.headers.end() && it->second.find("multipart/form-data") != std::string::npos)
         {
-            _isMultipart = true;
+            _toUpload = true;
             size_t boundaryPos = it->second.find("boundary=");
             if (boundaryPos != std::string::npos)
                 _boundary = "--" + it->second.substr(boundaryPos + 9);
@@ -116,7 +126,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
     else
         bodyPart.assign(requestBuffer.begin(), requestBuffer.end());
     
-    if (_isMultipart)
+    if (_toUpload)
     {
         if (!_uploadFile.is_open())
         {
@@ -136,7 +146,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             if (!location)
                 return -1;
             if (_request.path.find(location->path) != 0)
-                _isMultipart = false;
+                _toUpload = false;
             else
             {
                 std::string filePath = _server->buildFilePath(_request.path, *location) + filename;
@@ -152,7 +162,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
 
     if (_contentLength > 0)
     {
-        if (_isMultipart)
+        if (_toUpload)
         {
             if (_bytesWritten == 0)
             {
@@ -170,7 +180,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             _request.body.insert(_request.body.end(), bodyPart.begin(), bodyPart.end());
         std::cout << ORANGE << _request.body.size() << " / " << _contentLength << RESET << std::endl;
 
-        if (_isMultipart && _bytesWritten >= _contentLength)
+        if (_toUpload && _bytesWritten >= _contentLength)
         {
             _uploadFile.close();
             return 1; // Completa
@@ -201,7 +211,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             }
             
             size_t chunkToRead = std::min((size_t)_chunkLength, bodyPart.size());
-            if (_isMultipart)
+            if (_toUpload)
             {
                 if (_bytesWritten == 0)
                 {

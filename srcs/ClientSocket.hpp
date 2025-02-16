@@ -14,11 +14,13 @@ class ClientSocket : public Socket
 		ClientSocket(int fd, Server const *server);
 		~ClientSocket();
 
-		int getFd() const;
 		void addBuffer(const char *buffer, int bytesRead);
-
 		int parseRequest(ServerManager &serverManager);
 		void genResponse(ServerManager &serverMenager);
+		void setLastActivity();
+
+		time_t getLastActivity() const;
+		int getFd() const;
 		std::string getBuffer() const;
 		std::string getResponse() const;
 		int getStatus() const;
@@ -31,11 +33,12 @@ class ClientSocket : public Socket
 		std::vector<char> _buffer;
 		HttpRequest _request;
 		std::string _response;
+		time_t _lastActivity;
 		bool _keepAlive;
 		int _contentLength;
 		int _chunkLength;
 		int _headersLenght;
-		bool _isMultipart;
+		bool _toUpload;
 		std::string _boundary;
 		std::ofstream _uploadFile;
 		int _bytesWritten;
