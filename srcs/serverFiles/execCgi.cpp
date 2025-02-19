@@ -5,6 +5,7 @@
 HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &request) const
 {
     HttpResponse response;
+
     int pipe_in[2], pipe_out[2];
     
     if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)

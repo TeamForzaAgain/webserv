@@ -6,11 +6,17 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:19:43 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/13 13:57:33 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/17 12:09:32 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+
+bool isScript(std::string const &targetPath)
+{
+	// controlla che sia richiesto un .py
+	return targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py";
+}
 
 HttpResponse Server::genPostResponse(HttpRequest const &request, Location const &location) const
 {
@@ -30,7 +36,7 @@ HttpResponse Server::genPostResponse(HttpRequest const &request, Location const 
 		else
 			filename = "uploaded_file.bin";
 		
-		//controlla se il file e' stato auploadatp correttamente
+		//controlla se il file e' stato uploadato correttamente
 		struct stat buffer;
 		if (stat(targetPath.c_str(), &buffer) == 0)
 		{
@@ -49,10 +55,8 @@ HttpResponse Server::genPostResponse(HttpRequest const &request, Location const 
 			response.body = "<html><body><h1>Internal Server Error</h1></body></html>";
 		}
 	}
-	else if (location.cgi)
-	{
+	else if (location.cgi && isScript(targetPath))
 		response = execCgi(targetPath, request);
-	}
 	else
 	{
 		//la location non e' quella di upload
