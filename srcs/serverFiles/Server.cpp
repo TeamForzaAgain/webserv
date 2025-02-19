@@ -6,11 +6,13 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:23:12 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/19 17:21:54 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/19 17:47:33 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+
+const std::map<int, std::string>& statusCodeMessages = HttpStatusCodes::getStatusMap();
 
 Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls), 
 _hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
@@ -105,8 +107,9 @@ std::string Server::genResponse(HttpRequest const &request, int statusCode) cons
 {
 	HttpResponse response;
 	Location location = findLocation(request);
-	if (statusCode == 413)
-		return genErrorPage(location, 413, "Payload Too Large").toString();
+	std::cout << CYAN << "statusCode: " << statusCode << RESET << std::endl;
+	if (statusCode >= 100)
+		return genErrorPage(location, statusCode).toString();
 
 	if (!isMethodAllowed(location, request.method))
 	{

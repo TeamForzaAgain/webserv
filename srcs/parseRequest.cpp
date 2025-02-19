@@ -146,8 +146,8 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         else
         {
             _request.body.insert(_request.body.end(), bodyPart.begin(), bodyPart.end());
-            if ((int)_request.body.size() >= _server->getMaxBodySize())
-                return 403; // Payload too large
+            if (_server->getMaxBodySize() != 0 && (int)_request.body.size() >= _server->getMaxBodySize())
+                return 413; // Payload too large
             if ((int)_request.body.size() >= _contentLength)
                 return 1; // Completa
         }
@@ -192,8 +192,8 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             else
             {
                 _request.body.insert(_request.body.end(), bodyPart.begin(), bodyPart.begin() + chunkToRead);
-                if ((int)_request.body.size() >= _server->getMaxBodySize())
-                    return 403; // Payload too large
+                if (_server->getMaxBodySize() != 0 && (int)_request.body.size() >= _server->getMaxBodySize())
+                    return 413; // Payload too large
             }
             bodyPart.erase(bodyPart.begin(), bodyPart.begin() + chunkToRead);
             _chunkLength -= chunkToRead;

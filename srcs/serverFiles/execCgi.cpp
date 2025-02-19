@@ -10,13 +10,13 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
     
     if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
     {
-        return genErrorPage(Location(), 500, "Internal Server Error");
+        return genErrorPage(Location(), 500);
     }
 
     pid_t pid = fork();
     if (pid < 0)
     {
-        return genErrorPage(Location(), 500, "Internal Server Error");
+        return genErrorPage(Location(), 500);
     }
     else if (pid == 0) // Processo figlio (esegue CGI)
     {
@@ -94,7 +94,7 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         waitpid(pid, &status, 0);
         if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
         {
-            return genErrorPage(Location(), 500, "Internal Server Error");
+            return genErrorPage(Location(), 500);
         }
 
         // **3. Estrae il Content-Type e rimuove gli header**

@@ -95,35 +95,48 @@ struct HttpResponse
 };
 
 // Definizione della struttura const che associa uno statusCode al suo messaggio`
-const std::map<int, std::string> statusCodeMessages = {
-	{200, "OK"},
-	{201, "Created"},
-	{202, "Accepted"},
-	{204, "No Content"},
-	{301, "Moved Permanently"},
-	{302, "Found"},
-	{303, "See Other"},
-	{304, "Not Modified"},
-	{307, "Temporary Redirect"},
-	{308, "Permanent Redirect"},
-	{400, "Bad Request"},
-	{401, "Unauthorized"},
-	{403, "Forbidden"},
-	{404, "Not Found"},
-	{405, "Method Not Allowed"},
-	{406, "Not Acceptable"},
-	{408, "Request Timeout"},
-	{409, "Conflict"},
-	{411, "Length Required"},
-	{413, "Payload Too Large"},
-	{414, "URI Too Long"},
-	{415, "Unsupported Media Type"},
-	{500, "Internal Server Error"},
-	{501, "Not Implemented"},
-	{502, "Bad Gateway"},
-	{503, "Service Unavailable"},
-	{504, "Gateway Timeout"},
-	{505, "HTTP Version Not Supported"}
+class HttpStatusCodes
+{
+public:
+    static std::map<int, std::string> createStatusMap()
+    {
+        std::map<int, std::string> statusMap;
+        statusMap[200] = "OK";
+        statusMap[201] = "Created";
+        statusMap[202] = "Accepted";
+        statusMap[204] = "No Content";
+        statusMap[301] = "Moved Permanently";
+        statusMap[302] = "Found";
+        statusMap[303] = "See Other";
+        statusMap[304] = "Not Modified";
+        statusMap[307] = "Temporary Redirect";
+        statusMap[308] = "Permanent Redirect";
+        statusMap[400] = "Bad Request";
+        statusMap[401] = "Unauthorized";
+        statusMap[403] = "Forbidden";
+        statusMap[404] = "Not Found";
+        statusMap[405] = "Method Not Allowed";
+        statusMap[406] = "Not Acceptable";
+        statusMap[408] = "Request Timeout";
+        statusMap[409] = "Conflict";
+        statusMap[411] = "Length Required";
+        statusMap[413] = "Payload Too Large";
+        statusMap[414] = "URI Too Long";
+        statusMap[415] = "Unsupported Media Type";
+        statusMap[500] = "Internal Server Error";
+        statusMap[501] = "Not Implemented";
+        statusMap[502] = "Bad Gateway";
+        statusMap[503] = "Service Unavailable";
+        statusMap[504] = "Gateway Timeout";
+        statusMap[505] = "HTTP Version Not Supported";
+        return statusMap;
+    }
+
+    static const std::map<int, std::string>& getStatusMap()
+    {
+        static std::map<int, std::string> statusMap = createStatusMap();
+        return statusMap;
+    }
 };
 
 

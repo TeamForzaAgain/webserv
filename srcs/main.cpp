@@ -14,6 +14,7 @@ ServerConfig fillServer1()
 	serverConfig.defLocation.path = "";
 	serverConfig.defLocation.root = "./html/";
 	serverConfig.defLocation.dirListing = true;
+	serverConfig.maxBodySize = 0;
 	serverConfig.defLocation.errorPages[301] = "/errorPages/301.html";
 	serverConfig.defLocation.errorPages[403] = "/errorPages/403.html";
 	serverConfig.defLocation.errorPages[404] = "/errorPages/404.html";
