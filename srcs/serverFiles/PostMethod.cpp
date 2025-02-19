@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   PostMethod.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:19:43 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/17 12:09:32 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/19 15:09:06 by tpicchio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ HttpResponse Server::genPostResponse(HttpRequest const &request, Location const 
 	else
 	{
 		//la location non e' quella di upload
-		response = genErrorPage(location, 403, "Forbidden");
+		response = genErrorPage(location, 403);
 	}
 	
 	return response;

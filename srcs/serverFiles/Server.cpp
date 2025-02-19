@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:23:12 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/19 13:53:26 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/19 15:05:25 by tpicchio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,10 @@ Location const *Server::getUploadLocation() const
 	return NULL;
 }
 
-std::string genDefaultErrorPage(HttpResponse &response, int code, const std::string& message)
+std::string genDefaultErrorPage(HttpResponse &response, int code)
 {
 	std::ostringstream oss;
+	std::string message = statusCodeMessages.at(code);
 
 	oss << "<!DOCTYPE html>\n"
 		<< "<html lang=\"en\">\n"
@@ -50,14 +51,14 @@ std::string genDefaultErrorPage(HttpResponse &response, int code, const std::str
 	return oss.str();
 }
 
-HttpResponse Server::genErrorPage(const Location &location, int code, const std::string &message) const
+HttpResponse Server::genErrorPage(const Location &location, int code/* , const std::string &message */) const
 {
 	HttpResponse response;
 	std::string filePath;
 	bool hasCustomPage = false;
 
 	response.statusCode = code;
-	response.statusMessage = message;
+	response.statusMessage = statusCodeMessages.at(code);
 	response.contentType = "text/html";
 	// Verifica se la location ha una pagina di errore personalizzata
 	std::map<int, std::string>::const_iterator it = location.errorPages.find(code);
@@ -83,9 +84,9 @@ HttpResponse Server::genErrorPage(const Location &location, int code, const std:
 	if (hasCustomPage)
 		response.body = readFileContent(response, filePath);
 	if (response.contentType == "Unsupported Media Type")
-		response = genErrorPage(location, 415, "Unsupported Media Type");
+		response = genErrorPage(location, 415);
 	if (response.body.empty() || response.contentType != "text/html")
-		response.body = genDefaultErrorPage(response, code, message);
+		response.body = genDefaultErrorPage(response, code);
 	return response;
 }
 
@@ -107,7 +108,7 @@ std::string Server::genResponse(HttpRequest const &request) const
 
 	if (!isMethodAllowed(location, request.method))
 	{
-		response = genErrorPage(location, 405, "Method Not Allowed");
+		response = genErrorPage(location, 405);
 		return response.toString();
 	}
 	if (request.method == "GET")

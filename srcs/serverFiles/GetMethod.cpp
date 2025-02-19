@@ -6,7 +6,7 @@
 /*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:05:01 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/12 12:48:43 by tpicchio         ###   ########.fr       */
+/*   Updated: 2025/02/19 15:08:41 by tpicchio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ HttpResponse Server::genDirListing(std::string const &path, Location const &loca
 	dir = opendir(path.c_str());
 	if (dir == NULL)
 	{
-		return genErrorPage(location, 404, "Not Found");
+		return genErrorPage(location, 404);
 	}
 	oss << "<!DOCTYPE html>"
 		<< "<html lang=\"en\">"
@@ -80,7 +80,7 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 			response.body = readFileContent(response, joinPaths(targetPath, "index.html"));
 
 		if (response.body == "Unsupported Media Type")
-			return genErrorPage(location, 415, "Unsupported Media Type");
+			return genErrorPage(location, 415);
 
 		if (!response.body.empty())
 		{
@@ -93,11 +93,11 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 		}
 		else if (opendir(targetPath.c_str()) == NULL)
 		{
-			response = genErrorPage(location, 404, "Not Found");
+			response = genErrorPage(location, 404);
 		}
 		else
 		{
-			response = genErrorPage(location, 403, "Forbidden");
+			response = genErrorPage(location, 403);
 		}
 	}
 	else
@@ -105,14 +105,14 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 		struct stat st;
 		if (stat(targetPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
 		{
-			return genErrorPage(location, 301, "Moved Permanently");
+			return genErrorPage(location, 301);
 		}
 		response.body = readFileContent(response, targetPath);
 		if (response.body == "Unsupported Media Type")
-			return genErrorPage(location, 415, "Unsupported Media Type");
+			return genErrorPage(location, 415);
 		if (response.body.empty())
 		{
-			response = genErrorPage(location, 404, "Not Found");
+			response = genErrorPage(location, 404);
 		}
 		else
 		{
