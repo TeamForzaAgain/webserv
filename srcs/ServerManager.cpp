@@ -136,10 +136,10 @@ void ServerManager::readClient(size_t &i)
     _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer, bytesRead);
     //std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
     _clientSockets[_pollfds[i].fd]->genResponse(*this);
-    if (_clientSockets[_pollfds[i].fd]->getStatus() == 0)
-        _pollfds[i].events = POLLIN;
-    else if (_clientSockets[_pollfds[i].fd]->getStatus() == 1 || _clientSockets[_pollfds[i].fd]->getStatus() == -1)
+    if (_clientSockets[_pollfds[i].fd]->getStatus() > 0)
         _pollfds[i].events = POLLOUT;
+    else
+        _pollfds[i].events = POLLIN;
     
     _clientSockets[_pollfds[i].fd]->setLastActivity();
 }

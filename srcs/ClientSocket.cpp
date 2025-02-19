@@ -56,14 +56,17 @@ void ClientSocket::genResponse(ServerManager &serverManager)
     std::cout << RESET << std::endl;
     std::cout << ORANGE << "Request status: " << _status << RESET << std::endl;
 
-    if (_status != 2)
-        _buffer.clear();
-    if (_status != 0)
+    if (_status > 0)
     {
-        if (_status != 2)
-            _response = _server->genResponse(_request);
+        _response = _server->genResponse(_request, _status);
+        _status = 1;
+        _buffer.clear();
         _request.clear();
     }
+    else if (_status == -1)
+        _request.clear();
+    else
+        _buffer.clear();
 }
 
 std::string ClientSocket::getBuffer() const

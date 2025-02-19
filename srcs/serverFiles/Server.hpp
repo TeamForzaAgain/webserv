@@ -13,10 +13,11 @@ class Server
 		std::string getServerName() const { return _hostName; }
 		Server const *getServer() const { return this; }
 		ListeningSocket *getListeningSocket() const { return _ls; }
+		int getMaxBodySize() const { return _maxBodySize; }
 		bool operator<(const Server &other) const { return _hostName < other._hostName; }
 		Location const *getUploadLocation() const;
 
-		std::string genResponse(HttpRequest const &request) const;
+		std::string genResponse(HttpRequest const &request, int statusCode) const;
 		HttpResponse genGetResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genPostResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genDeleteResponse(HttpRequest const &request, Location const &location) const;

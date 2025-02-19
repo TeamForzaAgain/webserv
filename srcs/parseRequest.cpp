@@ -4,9 +4,9 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
 {
     std::vector<char> requestBuffer(_buffer.begin(), _buffer.end());
     
-    if (_status == 1 || _status == 2) // Nuova richiesta, dobbiamo parsare gli header
+    if (_status == 1 || _status == -1) // Nuova richiesta, dobbiamo parsare gli header
     {
-        if (_status == 2)
+        if (_status == -1)
             _status = 1;
         _request.clear();
         _chunkLength = -1;
@@ -19,7 +19,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         size_t headerEnd = requestStr.find("\r\n\r\n");
         
         if (headerEnd == std::string::npos) // Header incompleto
-            return 2;
+            return -1;
         
         _headersLenght = headerEnd + 4;
         std::stringstream stream(requestStr.substr(0, headerEnd));
@@ -27,17 +27,17 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         
         // Parsiamo la prima riga (metodo, path, versione)
         if (!std::getline(stream, line) || line.find(" ") == std::string::npos)
-            return -1;
+            return 400;
         std::istringstream firstLine(line);
         if (!(firstLine >> _request.method >> _request.path))
-            return -1;
+            return 400;
         
         // Parsiamo gli header
         while (std::getline(stream, line) && !line.empty())
         {
             size_t sep = line.find(": ");
             if (sep == std::string::npos)
-                return -1;
+                return 400;
             _request.headers[line.substr(0, sep)] = line.substr(sep + 2);
         }
         
@@ -51,7 +51,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         else if ((it = _request.headers.find("Transfer-Encoding")) != _request.headers.end())
             _chunkLength = 0; // Attiviamo la modalità chunked
         else if (_request.method == "POST") // POST deve avere un body definito
-            return -1;
+            return 400;
 
         // Controllo se la richiesta è multipart/form-data
         it = _request.headers.find("Content-Type");
@@ -106,7 +106,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
 
             Location const *location = _server->getUploadLocation();
             if (!location)
-                return -1;
+                return 400;
             if (_request.path.find(location->path) != 0)
                 _toUpload = false;
             else
@@ -116,7 +116,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                 if (!_uploadFile)
                 {
                     perror(strerror(errno));
-                    return -1;
+                    return 400;
                 }
             }
         } 
@@ -137,20 +137,22 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             }
             _uploadFile.write(bodyPart.data(), bodyPart.size());
             _bytesWritten += bodyPart.size();
+            if (_bytesWritten >= _contentLength)
+            {
+                _uploadFile.close();
+                return 1; // Completa
+            }
         }
         else
-            _request.body.insert(_request.body.end(), bodyPart.begin(), bodyPart.end());
-        std::cout << ORANGE << _request.body.size() << " / " << _contentLength << RESET << std::endl;
-
-        if (_toUpload && _bytesWritten >= _contentLength)
         {
-            _uploadFile.close();
-            return 1; // Completa
+            _request.body.insert(_request.body.end(), bodyPart.begin(), bodyPart.end());
+            if ((int)_request.body.size() >= _server->getMaxBodySize())
+                return 403; // Payload too large
+            if ((int)_request.body.size() >= _contentLength)
+                return 1; // Completa
         }
-        else if ((int)_request.body.size() >= _contentLength)
-            return 1; // Completa
-        else 
-            return 0; // Incompleta
+        std::cout << ORANGE << _request.body.size() << " / " << _contentLength << RESET << std::endl;
+        return 0; // Incompleta
     }
     else if (_chunkLength != -1) // Gestione chunked
     {
@@ -188,7 +190,11 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                 _bytesWritten += chunkToRead;
             }
             else
+            {
                 _request.body.insert(_request.body.end(), bodyPart.begin(), bodyPart.begin() + chunkToRead);
+                if ((int)_request.body.size() >= _server->getMaxBodySize())
+                    return 403; // Payload too large
+            }
             bodyPart.erase(bodyPart.begin(), bodyPart.begin() + chunkToRead);
             _chunkLength -= chunkToRead;
             

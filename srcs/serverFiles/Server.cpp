@@ -6,7 +6,7 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:23:12 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/19 13:53:26 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/19 14:13:25 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,10 +100,12 @@ bool isMethodAllowed(const Location &location, const std::string &method)
 	return false;
 }
 
-std::string Server::genResponse(HttpRequest const &request) const
+std::string Server::genResponse(HttpRequest const &request, int statusCode) const
 {
 	HttpResponse response;
 	Location location = findLocation(request);
+	if (statusCode == 413)
+		return genErrorPage(location, 413, "Payload Too Large").toString();
 
 	if (!isMethodAllowed(location, request.method))
 	{
