@@ -59,9 +59,9 @@ struct Location
     bool dirListing;                            // true → mostra il contenuto della directory se non c'è un default file
     bool upload;                                // true → se la location è per l'upload di file
     bool cgi;                                   // true → se la location è per l'esecuzione di script CGI
+	bool isAlias;                               // true → se la location è un alias
     std::vector<std::string> indexFiles;        // {"index.html", "index.htm", "default.html"}
     Methods allowedMethods;                     // {"GET", "POST", "DELETE"}
-	bool isAlias;                               // true → se la location è un alias
 	std::map<int, std::string> errorPages;      // {404 -> "custom_404.html"}
 };
 
@@ -69,6 +69,7 @@ struct Location
 struct ServerConfig
 {
     std::string hostName;              // Nome del server (es. "example.com")
+    int maxBodySize;                        // Dimensione massima del body
     Location defLocation;                   // Location Generale (se nessuna Location Specifica è trovata)
     std::vector<Location> locations;            // Rotte specifiche (location {})
 };
