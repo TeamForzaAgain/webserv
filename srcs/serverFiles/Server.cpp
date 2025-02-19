@@ -6,7 +6,7 @@
 /*   By: fdonati <fdonati@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 13:23:12 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/11 16:49:51 by fdonati          ###   ########.fr       */
+/*   Updated: 2025/02/19 13:53:26 by fdonati          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls), 
 _hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
 _defIndexFiles(serverconfig.defLocation.indexFiles), _defDirListing(serverconfig.defLocation.dirListing),
-_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations)
+_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations), _maxBodySize(serverconfig.maxBodySize)
 {}
 
 Location const *Server::getUploadLocation() const

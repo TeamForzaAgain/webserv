@@ -40,6 +40,7 @@ class Server
 		bool 						_defDirListing;
 		std::map<int, std::string>	_errorPages;
 		std::vector<Location>		_locations;
+		int 						_maxBodySize;
 
 };
 
