@@ -9,6 +9,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         if (_status == -1)
             _status = 1;
         _request.clear();
+        _boundary.clear();
         _chunkLength = -1;
         _headersLenght = 0;
         _contentLength = 0;
@@ -60,7 +61,13 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             _toUpload = true;
             size_t boundaryPos = it->second.find("boundary=");
             if (boundaryPos != std::string::npos)
+            {
                 _boundary = "--" + it->second.substr(boundaryPos + 9);
+                //elimina \r in fondo a boundary
+                if (_boundary[_boundary.size() - 1] == '\r')
+                    _boundary.erase(_boundary.size() - 1);
+            }
+            std::cout << CYAN << "Boundary: " << _boundary << RESET << std::endl;
         }
 
         it = _request.headers.find("Host");
@@ -135,6 +142,15 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                     bodyPart.erase(bodyPart.begin(), it + 4);
                 }
             }
+            std::vector<char>::iterator boundaryPos = std::search(bodyPart.begin(), bodyPart.end(), _boundary.begin(), _boundary.end());
+            if (boundaryPos != bodyPart.end())
+            {
+                std::cout << YELLOW << "Boundary found" << RESET << std::endl;
+                while (boundaryPos != bodyPart.begin() && *(boundaryPos - 1) == '\n')
+                    --boundaryPos;
+                _bytesWritten += boundaryPos - bodyPart.begin();
+                bodyPart.erase(boundaryPos, bodyPart.end()); // Rimuove il boundary e tutto il resto
+            }
             _uploadFile.write(bodyPart.data(), bodyPart.size());
             _bytesWritten += bodyPart.size();
             if (_bytesWritten >= _contentLength)
@@ -185,6 +201,15 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                         _bytesWritten += it - bodyPart.begin() + 4;
                         bodyPart.erase(bodyPart.begin(), it + 4);
                     }
+                }
+                std::vector<char>::iterator boundaryPos = std::search(bodyPart.begin(), bodyPart.end(), _boundary.begin(), _boundary.end());
+                if (boundaryPos != bodyPart.end())
+                {
+                    std::cout << YELLOW << "Boundary found" << RESET << std::endl;
+                    while (boundaryPos != bodyPart.begin() && *(boundaryPos - 1) == '\n')
+                        --boundaryPos;
+                    _bytesWritten += boundaryPos - bodyPart.begin();
+                    bodyPart.erase(boundaryPos, bodyPart.end()); // Rimuove il boundary e tutto il resto
                 }
                 _uploadFile.write(bodyPart.data(), chunkToRead);
                 _bytesWritten += chunkToRead;
