@@ -1,7 +1,5 @@
 #include "Server.hpp"
 
-#include <poll.h>
-
 HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &request) const
 {
     HttpResponse response;
@@ -95,6 +93,13 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
         {
             return genErrorPage(Location(), 500);
+        }
+
+        if (cgiOutput.empty())
+        {
+            response.statusCode = 204;
+            response.statusMessage = "No Content";
+            return response;
         }
 
         // **3. Estrae il Content-Type e rimuove gli header**

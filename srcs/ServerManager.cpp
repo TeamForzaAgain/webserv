@@ -8,11 +8,9 @@ ServerManager::~ServerManager()
     std::cout << "Distruttore ServerManager" << std::endl;
     _pollfds.clear();
 
-    // Distruggere tutti i ClientSocket
-    for (std::map<int, ClientSocket *>::iterator it = _clientSockets.begin(); it != _clientSockets.end(); ++it)
+    for (size_t i = 0; i < _pollfds.size(); i++)
     {
-        delete it->second;
-        it->second = NULL;
+        delete _clientSockets[_pollfds[i].fd];
     }
     _clientSockets.clear();
     for (size_t i = 0; i < _listeningSockets.size(); i++)
@@ -106,6 +104,8 @@ void ServerManager::closeClient(size_t &i)
 {
     std::cout << MAGENTA << "Closing socket " << _pollfds[i].fd << RESET << std::endl;
     close(_pollfds[i].fd);
+    delete _clientSockets[_pollfds[i].fd];
+    _clientSockets[_pollfds[i].fd] = NULL;
     _clientSockets.erase(_pollfds[i].fd);
     _pollfds.erase(_pollfds.begin() + i);
     i--; // Evita errori di iterazione
