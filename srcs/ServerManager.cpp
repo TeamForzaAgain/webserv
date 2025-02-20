@@ -114,9 +114,6 @@ void ServerManager::closeClient(size_t &i)
 void ServerManager::readClient(size_t &i)
 {
     std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
-
-
-
     char tempBuffer[BUFFERSIZE];
     int bytesRead = recv(_pollfds[i].fd, tempBuffer, BUFFERSIZE - 1, 0);
 
