@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   DeleteMethod.cpp                                   :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: tpicchio <tpicchio@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/11 12:04:04 by tpicchio          #+#    #+#             */
-/*   Updated: 2025/02/19 15:09:20 by tpicchio         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
 
 HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location const &location) const
@@ -22,7 +10,6 @@ HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location cons
 		if (location.path == getUploadLocation()->path)
 		{
 			response = genDirListing(targetPath, location);
-			std::cout << CYAN << "Body: " << response.body << RESET << std::endl;
 			return response;
 		}
 		response = genErrorPage(location, 403);
