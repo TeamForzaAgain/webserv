@@ -2,7 +2,12 @@
 #include "Include.hpp"
 
 void signalHandler(int signum) {
-    std::cout << "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." << std::endl;
+    std::cout <<PSYCHO<< "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." <<RESET<< std::endl;
+	if (signum == SIGCHLD)
+	{
+		while (waitpid(-1, NULL, WNOHANG) > 0)
+			;
+	}
 }
 
 ServerConfig fillServer1()
@@ -97,6 +102,7 @@ ServerConfig fillServer2()
 int main()
 {
 	signal(SIGINT, signalHandler);
+	signal(SIGCHLD, signalHandler);
 
     ServerManager serverManager;
 
