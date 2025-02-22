@@ -33,6 +33,7 @@ class Server
 		std::string readFileContent(HttpResponse &response, std::string const &filePath) const;
 		std::string findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const;
 
+		void printServer() const;
 	private:
 		ListeningSocket				*_ls;
 		std::string					_hostName;

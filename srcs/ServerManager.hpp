@@ -26,6 +26,7 @@ class ServerManager
 				virtual const char *what() const throw();
 		};
 
+		void printConfig() const;
 	private:
 
 		std::vector<struct pollfd> _pollfds;
@@ -38,6 +39,7 @@ class ServerManager
 		void closeClient(size_t &i);
 		void readClient(size_t &i);
 		void writeClient(size_t &i);
+
 
 };
 
