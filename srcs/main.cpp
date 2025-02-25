@@ -81,14 +81,14 @@ ServerConfig fillServer1()
 	serverConfig.locations.push_back(location);
 
 	Location location2;
-	location2.path = "/testAlias/";
-    location2.root = "./html/server2/";
+	location2.path = "/gotta_catch_em_all/";
+    location2.root = "./html/";
 	location2.dirListing = true;
 	location2.upload = false;
-	location2.isAlias = true;
+	location2.isAlias = false;
 	location.cgi = false;
-	location2.indexFiles.push_back("welcome.html");
-	location2.allowedMethods = (Methods){true, false, false};
+	location2.indexFiles.push_back("index.html");
+	location2.allowedMethods = (Methods){true, true, false};
 	serverConfig.locations.push_back(location2);
 
 	Location location4;
