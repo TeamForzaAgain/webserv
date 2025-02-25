@@ -87,14 +87,6 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         }
         close(pipe_out[0]);
 
-        // Attende la terminazione del processo figlio
-        int status;
-        waitpid(pid, &status, 0);
-        if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-        {
-            return genErrorPage(Location(), 500);
-        }
-
         if (cgiOutput.empty())
         {
             response.statusCode = 204;
