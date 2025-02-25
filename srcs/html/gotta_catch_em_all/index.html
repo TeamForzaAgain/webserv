@@ -51,18 +51,51 @@
             padding: 10px;
             font-size: 16px;
         }
-		#capture-result {
-			position: fixed;
-			bottom: 450px;
-			left: 0;
-			width: 100%;
-			font-weight: bold;
-			text-align: center;
-			padding: 10px;
-		}
+        #capture-result {
+            position: fixed;
+            bottom: 450px;
+            left: 0;
+            width: 100%;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+        }
+
+        /* Contenitore per la squadra in alto a sinistra */
+        #captured-area {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 9999; /* In primo piano */
+            background-color: #f0f0f0; /* Sfondo leggero, facoltativo */
+            padding: 5px;
+            border-radius: 5px;
+        }
+        /* Titolo “Squadra” */
+        #captured-area h2 {
+            margin: 0;
+            font-size: 16px;
+            text-align: left;
+        }
+        /* Contenitore degli sprite dei Pokémon catturati */
+        #captured-pokemons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        #captured-pokemons img {
+            width: 50px;
+            height: 50px;
+        }
     </style>
 </head>
 <body>
+    <!-- Contenitore con il titolo "Squadra" e gli sprite dei Pokémon catturati -->
+    <div id="captured-area">
+        <h2>Squadra</h2>
+        <div id="captured-pokemons"></div>
+    </div>
+
     <h1>Cerca un Pokémon da catturare</h1>
     <input type="text" id="search-bar" placeholder="Inserisci il nome del Pokémon" />
     <div id="pokemon-icons"></div>
@@ -70,8 +103,8 @@
 
     <!-- Poké Ball container sempre in fondo -->
     <div id="pokeball-container"></div>
-	<div id="capture-result"></div>
-	
+    <div id="capture-result"></div>
+    
     <script>
         let allPokemons = [];
 
@@ -86,7 +119,10 @@
         document.getElementById('search-bar').addEventListener('input', function(event) {
             const query = event.target.value.toLowerCase().trim();
             const pokemonIconsDiv = document.getElementById('pokemon-icons');
+            pokemonIconsDiv.style.display = 'flex'; // Mostra sempre quando si digita
             pokemonIconsDiv.innerHTML = ''; // Pulisce l'area prima di aggiungere nuove icone
+            
+            document.getElementById('selected-pokemon').style.display = 'none'; // Nascondi l'eventuale Pokémon selezionato
 
             if (query) {
                 const filteredPokemons = allPokemons.filter(pokemon => pokemon.name.startsWith(query));
@@ -123,6 +159,7 @@
         function selectPokemon(pokemonDetails) {
             const selectedPokemonDiv = document.getElementById('selected-pokemon');
             const pokemonIconsDiv = document.getElementById('pokemon-icons');
+            
             pokemonIconsDiv.style.display = 'none'; // Nasconde la lista dei Pokémon
             selectedPokemonDiv.style.display = 'flex'; // Mostra l'area del Pokémon selezionato
             selectedPokemonDiv.innerHTML = ''; // Pulisce l'area prima di aggiungere nuovi contenuti
@@ -150,6 +187,7 @@
             ];
 
             const pokeballContainer = document.getElementById('pokeball-container');
+            pokeballContainer.style.display = 'flex'; // Mostra le Poké Ball
             pokeballContainer.innerHTML = ''; // Pulisce le Poké Ball precedenti
 
             pokeballs.forEach(ball => {
@@ -159,41 +197,79 @@
                 const ballImg = document.createElement('img');
                 ballImg.src = ball.url; // Usa l'URL esterno per l'immagine
                 ballImg.alt = ball.name;
-				ballImg.onclick = () => {
-					const requestData = {
-						pokemon: pokemonDetails.name,
-						pokeball: ball.name
-					};
+                ballImg.onclick = () => {
+                    const requestData = {
+                        pokemon: pokemonDetails.name,
+                        pokeball: ball.name
+                    };
 
-					fetch('http://localhost:8080/pokemon_capture.py', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json'
-						},
-						body: JSON.stringify(requestData)
-					})
-					.then(response => response.json())
-					.then(data => {
-						// Seleziona il div dove mostrare il risultato
-						const captureResultDiv = document.getElementById('capture-result');
+                    fetch('http://localhost:8080/pokemon_capture.py', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Seleziona il div dove mostrare il risultato
+                        const captureResultDiv = document.getElementById('capture-result');
+                        captureResultDiv.style.display = 'block';
 
-						// Imposta il testo del risultato
-						captureResultDiv.textContent = data.message;
+                        // Imposta il testo del risultato
+                        captureResultDiv.textContent = data.message;
 
-						// Cambia il colore in base al risultato
-						captureResultDiv.style.color = data.caught ? 'green' : 'red';
-					})
-					.catch(error => {
-						console.error('Errore nella richiesta di cattura:', error);
-						document.getElementById('capture-result').textContent = 'Errore nella cattura.';
-						document.getElementById('capture-result').style.color = 'red';
-					});
-				};
+                        // Cambia il colore in base al risultato
+                        captureResultDiv.style.color = data.caught ? 'green' : 'red';
+
+                        // Se il Pokémon è stato catturato con successo...
+                        if (data.caught) {
+                            const capturedPokemonsDiv = document.getElementById('captured-pokemons');
+                            
+                            // Controlla che non ci siano già 6 Pokémon
+                            if (capturedPokemonsDiv.childElementCount < 6) {
+                                // Aggiungi lo sprite al contenitore
+                                const sprite = document.createElement('img');
+                                sprite.src = pokemonDetails.sprites.front_default;
+                                sprite.alt = pokemonDetails.name;
+                                capturedPokemonsDiv.appendChild(sprite);
+                            } else {
+                                // Se vuoi avvisare l'utente:
+                                alert("La squadra è già al completo (6 Pokémon)!");
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Errore nella richiesta di cattura:', error);
+                        const captureResultDiv = document.getElementById('capture-result');
+                        captureResultDiv.textContent = 'Errore nella cattura.';
+                        captureResultDiv.style.color = 'red';
+                    });
+                };
+
                 pokeballDiv.appendChild(ballImg);
                 pokeballContainer.appendChild(pokeballDiv);
             });
         }
-    </script>
 
+        // Tornare alla ricerca se si clicca nuovamente nella barra
+        document.getElementById('search-bar').addEventListener('focus', function() {
+            const selectedPokemonDiv = document.getElementById('selected-pokemon');
+            const pokemonIconsDiv = document.getElementById('pokemon-icons');
+            const pokeballContainer = document.getElementById('pokeball-container');
+            const captureResult = document.getElementById('capture-result');
+
+            if (selectedPokemonDiv.style.display === 'flex') {
+                // Nascondi il Pokémon selezionato
+                selectedPokemonDiv.style.display = 'none';
+                // Mostra di nuovo i Pokémon filtrati
+                pokemonIconsDiv.style.display = 'flex';
+                // Nascondi le Poké Ball
+                pokeballContainer.style.display = 'none';
+                // Nascondi l'eventuale messaggio di cattura
+                captureResult.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
