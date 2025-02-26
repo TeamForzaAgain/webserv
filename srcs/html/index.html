@@ -83,8 +83,13 @@
     <br>
     <a href="/testAlias/welcome.html">Test Server2</a>
 
+	
     <!-- Upload Section -->
     <div class="upload-section">
+		<h2>Test CGI</h2>
+		<button id="catchBtn">Gotta catch'em all</button>
+		<br>
+		<br>
         <h2>File Upload</h2>
         <form id="uploadForm" enctype="multipart/form-data">
             <button id="uploadBtn">Upload File</button>
@@ -103,6 +108,11 @@
             let fileInput = document.getElementById("fileInput");
             let uploadForm = document.getElementById("uploadForm");
             let filesContainer = document.getElementById("files");
+			let catchBtn = document.getElementById("catchBtn");
+
+			catchBtn.addEventListener("click", function () {
+				window.location.href = "http://localhost:8080/gotta_catch_em_all/";
+			});
 
             // Impedisce il comportamento predefinito del form
             uploadForm.addEventListener("submit", function (event) {

@@ -53,7 +53,7 @@ def simulate_catch(pokemon, pokeball):
         "pokemon": pokemon,
         "pokeball": pokeball,
         "caught": caught,
-        "message": f"Hai catturato {pokemon}!" if caught else f"{pokemon} è scappato!",
+        "message": f"Hai catturato {pokemon}!" if caught else f"{pokemon} si è liberato!",
         "catch_probability": round(catch_probability * 100, 2)  # Percentuale
     }
 
