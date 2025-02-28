@@ -4,7 +4,7 @@ const std::map<int, std::string>& statusCodeMessages = HttpStatusCodes::getStatu
 
 Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls), 
 _hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
-_defIndexFiles(serverconfig.defLocation.indexFiles), _defDirListing(serverconfig.defLocation.dirListing),
+_defIndexFiles(serverconfig.defLocation.indexFiles), _defAutoIndex(serverconfig.defLocation.autoIndex),
 _errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations), _maxBodySize(serverconfig.maxBodySize)
 {}
 

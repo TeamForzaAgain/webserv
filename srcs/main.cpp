@@ -1,171 +1,371 @@
-#include "ServerManager.hpp"
 #include "Include.hpp"
+#include "SyntaxValidator.hpp"
+#include "LogicValidator.hpp"
+#include "ServerManager.hpp"
 
-void signalHandler(int signum) {
-    std::cout <<MAGENTA<< "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." <<RESET<< std::endl;
-	if (signum == SIGCHLD)
+volatile sig_atomic_t g_signal_status = 0;
+
+// void signalHandler(int signum)
+// {
+// 	std::cout << MAGENTA << "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." << RESET << std::endl;
+// 	if (signum == SIGCHLD)
+// 	{
+// 		while (waitpid(-1, NULL, WNOHANG) > 0)
+// 			;
+// 	}
+// }
+
+static bool hasConfExtension(const std::string &filename)
+{
+	if (filename.size() > 5 && filename.substr(filename.size() - 5) == ".conf")
+		return (true);
+
+	throw std::runtime_error("Il file deve avere estensione .conf");
+}
+
+static bool fileExistsAndReadable(const std::string &filename)
+{
+	struct stat buffer;
+	std::ifstream file;
+
+	if (stat(filename.c_str(), &buffer) != 0)
 	{
-		while (waitpid(-1, NULL, WNOHANG) > 0)
-			;
+		throw std::runtime_error("Il file non esiste");
+	}
+
+	if (S_ISDIR(buffer.st_mode))
+	{
+		throw std::runtime_error("Il percorso è una directory");
+	}
+
+	file.open(filename.c_str());
+	if (!file.is_open())
+	{
+		throw std::runtime_error("Impossibile aprire il file");
+	}
+	return (true);
+}
+
+static bool loadFileToStream(const std::string &filename, std::stringstream &buffer)
+{
+	std::ifstream file(filename.c_str());
+
+	if (!file.is_open())
+	{
+		throw std::runtime_error("Impossibile aprire il file");
+	}
+	buffer << file.rdbuf();
+	file.close();
+	return (true);
+}
+
+static bool preliminaryChecks(int ac, char **av, std::stringstream &buffer)
+{
+	std::string filename;
+
+	if (ac != 2)
+	{
+		std::ostringstream oss;
+		oss << "Uso corretto: " << av[0] << " <file_di_configurazione.conf>" << std::endl;
+		throw std::runtime_error(oss.str());
+	}
+
+	filename = av[1];
+
+	hasConfExtension(filename);
+
+	fileExistsAndReadable(filename);
+
+	loadFileToStream(filename, buffer);
+
+	std::cout << GREEN << "[SUCCESS] Il file è stato caricato correttamente!" << RESET << std::endl;
+	return (true);
+}
+
+void cleanConfig(std::istream &configStream, std::stringstream &cleanedConfig)
+{
+	std::string line;
+
+	while (std::getline(configStream, line))
+	{
+		std::string temp;
+		for (size_t i = 0; i < line.size(); i++)
+		{
+			if (line[i] != ';') temp += line[i];
+		}
+		line = temp;
+
+		size_t start = 0;
+		while (start < line.size() && (line[start] == ' ' || line[start] == '\t'))
+			start++;
+
+		size_t end = line.size();
+		while (end > start && (line[end - 1] == ' ' || line[end - 1] == '\t'))
+			end--;
+
+		line = line.substr(start, end - start);
+
+		if (!line.empty())
+		{
+			cleanedConfig << line << "\n";
+		}
 	}
 }
 
-void Server::printServer() const
+std::vector<std::string> splitServers(std::istream &configStream)
 {
-	std::cout << "server" << std::endl;
-	std::cout << "{\n";
-	std::cout << "\tserver_name " << _hostName << ";" << std::endl;
-	std::cout << "\tlisten " << _ls->getInterface() << ":" << _ls->getPort() << ";" << std::endl;
-	std::cout << "\troot " << _root << ";" << std::endl;
-	std::cout << "\tindex ";
-	for (size_t i = 0; i < _defIndexFiles.size(); i++)
-		std::cout << _defIndexFiles[i] << " ";
-	std::cout << ";" << std::endl;
-	std::cout << "\tautoindex " << (_defDirListing ? "on" : "off") << ";" << std::endl;
-	std::cout << "\tmax_body_size " << _maxBodySize << ";\n" << std::endl;
-	for (std::map<int, std::string>::const_iterator it = _errorPages.begin(); it != _errorPages.end(); it++)
-		std::cout << "\terror_page " << it->first << " -> " << it->second << ";" << std::endl;
-	std::cout << "\n";
-	for (size_t i = 0; i < _locations.size(); i++)
+	std::vector<std::string> servers;
+	std::stringstream currentServer;
+	std::string line;
+	bool insideServer = false;
+	int bracketCount = 0;
+
+	while (std::getline(configStream, line))
 	{
-		std::cout << "\tlocation " << _locations[i].path << std::endl;
-		std::cout << "\t{\n";
-		std::cout << "\t\t" << (_locations[i].isAlias ? "alias" : "root") << " " << _locations[i].root << ";" << std::endl;
-		std::cout << "\t\tautoindex " << (_locations[i].dirListing ? "on" : "off") << ";" << std::endl;
-		std::cout << "\t\tupload " << (_locations[i].upload ? "on" : "off") << ";" << std::endl;
-		std::cout << "\t\tcgi " << (_locations[i].cgi ? "on" : "off") << ";" << std::endl;
-		std::cout << "\t\tallowed_methods " << (_locations[i].allowedMethods.GET ? "GET " : "") << (_locations[i].allowedMethods.POST ? "POST " : "") << (_locations[i].allowedMethods.DELETE ? "DELETE " : "") << ";" << std::endl;
-		std::cout << "\t\tindex ";
-		for (size_t j = 0; j < _locations[i].indexFiles.size(); j++)
-			std::cout << _locations[i].indexFiles[j] << " ";
-		std::cout << ";" << std::endl;
-		for (std::map<int, std::string>::const_iterator it = _locations[i].errorPages.begin(); it != _locations[i].errorPages.end(); it++)
-			std::cout << "\t\terror_page "<< it->first << " -> " << it->second << ";" << std::endl;
-		std::cout << "\n\t}\n\n";
+		if (line.find("server {") != std::string::npos)
+		{
+			if (insideServer)
+			{
+				servers.push_back(currentServer.str());
+				currentServer.str("");
+				currentServer.clear();
+			}
+			insideServer = true;
+			bracketCount = 1;
+		} else if (insideServer)
+		{
+			if (line.find("{") != std::string::npos)
+			{
+				bracketCount++;
+			}
+			if (line.find("}") != std::string::npos)
+			{
+				bracketCount--;
+			}
+			if (bracketCount == 0) {  
+				servers.push_back(currentServer.str());
+				currentServer.str("");
+				currentServer.clear();
+				insideServer = false;
+				continue;
+			}
+		}
+		if (insideServer)
+		{
+			currentServer << line << "\n";
+		}
 	}
-	std::cout << "}\n\n";
+	return servers;
 }
 
-void ServerManager::printConfig() const
+
+
+std::vector<ServerConfig> parseServers(const std::vector<std::string> &serverBlocks)
 {
-	std::cout << YELLOW << "\nConfiguration File:\n" << CYAN << std::endl;
-	for (size_t i = 0; i < _servers.size(); i++)
-		_servers[i].printServer();
-	std::cout << RESET<< std::endl;
+	std::vector<ServerConfig> servers;
+
+	for (size_t i = 0; i < serverBlocks.size(); i++)
+	{
+		ServerConfig server;
+		std::istringstream serverStream(serverBlocks[i]);
+		std::string line;
+		bool insideLocation = false;
+		Location currentLocation;
+
+		while (std::getline(serverStream, line))
+		{
+			if (line.find("location ") != std::string::npos)
+			{
+				if (insideLocation)
+				{
+					server.locations.push_back(currentLocation);
+				}
+				currentLocation = Location();
+				insideLocation = true;
+				std::istringstream iss(line);
+				std::string keyword;
+				iss >> keyword >> currentLocation.path;
+				continue;
+			}
+
+			if (line.find("}") != std::string::npos && insideLocation)
+			{
+				server.locations.push_back(currentLocation);
+				insideLocation = false;
+				continue;
+			}
+
+			std::istringstream iss(line);
+			std::string key, value;
+			iss >> key;
+
+			if (key == "methods")
+			{
+				while (iss >> value)
+				{
+					if (value == "GET") currentLocation.allowedMethods.GET = true;
+					else if (value == "POST") currentLocation.allowedMethods.POST = true;
+					else if (value == "DELETE") currentLocation.allowedMethods.DELETE = true;
+				}
+			} else
+			{
+				iss >> value;
+				if (insideLocation)
+				{
+					if (key == "root") currentLocation.root = value;
+					else if (key == "auto_index") currentLocation.autoIndex = (value == "on");
+					else if (key == "upload") currentLocation.upload = (value == "on");
+					else if (key == "cgi") currentLocation.cgi = (value == "on");
+					else if (key == "alias") currentLocation.isAlias = (value == "on");
+					else if (key == "index") currentLocation.indexFiles.push_back(value);
+				} else
+				{
+					if (key == "server_name") server.hostName = value;
+					else if (key == "max_body_size") server.maxBodySize = static_cast<int>(strtol(value.c_str(), NULL, 10));
+					else if (key == "root") server.defLocation.root = value;
+					else if (key == "error_page")
+					{
+						int errorCode = atoi(value.c_str());
+						std::string errorFile;
+						iss >> errorFile;
+						server.defLocation.errorPages[errorCode] = errorFile;
+					}
+					else if (key == "listen")
+					{
+						ListenConfig listenConfig;
+						size_t colonPos = value.find(":");
+						if (colonPos != std::string::npos)
+						{
+							std::string ipString = value.substr(0, colonPos);
+							std::string portString = value.substr(colonPos + 1);
+							if (ipString == "localhost")
+								listenConfig.ip = htonl(INADDR_LOOPBACK);
+							else
+								listenConfig.ip = inet_addr(ipString.c_str());
+							listenConfig.port = atoi(value.substr(colonPos + 1).c_str());
+						} else
+						{
+							listenConfig.ip = INADDR_ANY;
+							listenConfig.port = atoi(value.c_str());
+						}
+						server.listens.push_back(listenConfig);
+					}
+				}
+			}
+		}
+		servers.push_back(server);
+	}
+	return servers;
 }
 
-ServerConfig fillServer1()
+void handleSigChld()
 {
-	ServerConfig serverConfig;
-
-	serverConfig.hostName = "Server1";
-
-	serverConfig.defLocation.path = "";
-	serverConfig.defLocation.root = "./html/";
-	serverConfig.defLocation.dirListing = true;
-	serverConfig.maxBodySize = 0;
-	serverConfig.defLocation.errorPages[301] = "/errorPages/301.html";
-	serverConfig.defLocation.errorPages[403] = "/errorPages/403.html";
-	serverConfig.defLocation.errorPages[404] = "/errorPages/404.html";
-	serverConfig.defLocation.errorPages[405] = "/errorPages/405.html";
-	serverConfig.defLocation.errorPages[415] = "/errorPages/415.html";
-
-	Location location;
-	location.path = "/";
-	location.root = "./html/";
-	location.dirListing = false;
-	location.allowedMethods = (Methods){true, true, false};
-	location.isAlias = false;
-	location.upload = false;
-	location.cgi = true;
-	serverConfig.locations.push_back(location);
-
-	Location location2;
-	location2.path = "/gotta_catch_em_all/";
-    location2.root = "./html/";
-	location2.dirListing = true;
-	location2.upload = false;
-	location2.isAlias = false;
-	location.cgi = false;
-	location2.indexFiles.push_back("index.html");
-	location2.allowedMethods = (Methods){true, true, false};
-	serverConfig.locations.push_back(location2);
-
-	Location location4;
-	location4.path = "/delete/";
-    location4.root = "./html/upload/";
-	location4.dirListing = true;
-	location4.isAlias = true;
-	location4.upload = false;
-	location4.cgi = false;
-	location4.allowedMethods = (Methods){false, false, true};
-	serverConfig.locations.push_back(location4);
-
-	Location location5;
-	location5.path = "/upload/";
-    location5.root = "";
-	location5.dirListing = true;
-	location5.isAlias = false;
-	location5.upload = true;
-	location5.cgi = false;
-	location5.allowedMethods = (Methods){true, true, true};
-	serverConfig.locations.push_back(location5);
-
-	return serverConfig;
+    while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-ServerConfig fillServer2()
+void signalHandler(int signum)
 {
-	ServerConfig serverConfig;
+	g_signal_status = signum;
+	std::cerr << "\n[SignalHandler] Intercettato segnale (" << signum << ")." << std::endl;
 
-	serverConfig.hostName = "Server2";
+	switch (signum)
+	{
+	case SIGCHLD:
+		handleSigChld();
+		break;
 
-	serverConfig.defLocation.path = "";
-	serverConfig.defLocation.root = "./html/";
-	serverConfig.defLocation.dirListing = true;
+	case SIGINT:
+	case SIGTERM:
+	case SIGHUP:
+		std::cerr << "[SignalHandler] Arresto del server in corso..." << std::endl;
 
-	Location location;
-	location.path = "/";
-	location.root = "./html/";
-	location.dirListing = false;
-	location.allowedMethods = (Methods){true, false, false};
-	location.isAlias = false;
-	serverConfig.locations.push_back(location);
+		exit(EXIT_SUCCESS);
+		break;
 
-	Location location2;
-	location2.path = "/server2/";
-    location2.root = "/html/";
-	location2.dirListing = true;
-	location2.indexFiles.push_back("welcome.html");
-	location2.allowedMethods = (Methods){true, false, false};
-	location2.isAlias = false;
-	serverConfig.locations.push_back(location2);
-	return serverConfig;
+	default:
+		std::cerr << "[SignalHandler] Segnale non gestito: " << signum << std::endl;
+		break;
+	}
 }
 
-int main()
+void setupSignalHandlers()
 {
-	signal(SIGINT, signalHandler);
-	signal(SIGCHLD, signalHandler);
+	struct sigaction sa;
+	sa.sa_handler = signalHandler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;
 
-    ServerManager serverManager;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
+}
 
-    try
-    {
-		ServerConfig serverConfig = fillServer1();
-        serverManager.newServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, serverConfig);
-		ServerConfig serverConfig2 = fillServer2();
-		serverManager.newServer(AF_INET, SOCK_STREAM, 0, 9090, INADDR_LOOPBACK, serverConfig2);
-    
-        std::cout << "I server sono stati configurati correttamente. Avvio del server manager..." << std::endl;
-		serverManager.printConfig();
-        serverManager.run();
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Errore durante l'esecuzione del server: " << e.what() << std::endl;
-        return 1;
-    }
+/*
+ * Gestore generale dei segnali intercettati.
+ *
+ * Segnali gestiti:
+ * - SIGCHLD : Indica la terminazione di un processo figlio.
+ * - SIGINT  : Generato da Ctrl+C, indica la richiesta di terminazione del server.
+ * - SIGTERM : Richiesta di terminazione gentile del server (es. `kill` di default).
+ * - SIGHUP  : Segnale di "hangup" (disconnessione terminale), spesso usato per ricaricare la configurazione.
+ *
+ * In caso di SIGINT, SIGTERM o SIGHUP, il server viene chiuso in modo controllato.
+ */
 
-    return 0;
+int main(int ac, char **av)
+{
+	std::stringstream fileStream;
+
+	setupSignalHandlers();
+
+	try
+	{
+		preliminaryChecks(ac, av, fileStream);
+
+		SyntaxValidator validator(fileStream);
+		validator.validate();
+		fileStream.clear();
+		fileStream.seekg(0, std::ios::beg);
+
+		LogicValidator logicValidator(fileStream);
+		logicValidator.validate();
+		fileStream.clear();
+		fileStream.seekg(0, std::ios::beg);
+
+		std::cout << GREEN << "[SUCCESS] File di configurazione validato con successo!" << RESET << std::endl;
+
+		std::stringstream cleanedConfig;
+		cleanConfig(fileStream, cleanedConfig);
+
+		std::vector<std::string> servers = splitServers(cleanedConfig);
+
+		std::vector<ServerConfig> parsedServers = parseServers(servers);
+
+		ServerManager serverManager;
+
+		for (size_t i = 0; i < parsedServers.size(); i++)
+		{
+			for (size_t j = 0; j < parsedServers[i].listens.size(); j++)
+			{
+	   		serverManager.newServer(
+			AF_INET, 
+			SOCK_STREAM, 
+			0, 
+			parsedServers[i].listens[j].port, 
+			parsedServers[i].listens[j].ip, 
+			parsedServers[i]
+		);
+	}
+}
+
+serverManager.run();
+
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << RED << "[ERROR] " << e.what() << RESET << std::endl;
+		return (1);
+	}
+	return (0);
 }

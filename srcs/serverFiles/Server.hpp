@@ -1,8 +1,8 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "Include.hpp"
-#include "ListeningSocket.hpp"
+#include "../Include.hpp"
+#include "../ListeningSocket.hpp"
 
 class Server
 {
@@ -22,7 +22,7 @@ class Server
 		HttpResponse genPostResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genDeleteResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genErrorPage(Location const &location, int code) const;
-		HttpResponse genDirListing(std::string const &path, Location const &location) const;
+		HttpResponse genAutoIndex(std::string const &path, Location const &location) const;
 
 		HttpResponse execCgi(std::string const &targetPath, HttpRequest const &request) const;
 		
@@ -39,7 +39,7 @@ class Server
 		std::string					_hostName;
 		std::string					_root;
 		std::vector<std::string>	_defIndexFiles;
-		bool 						_defDirListing;
+		bool 						_defAutoIndex;
 		std::map<int, std::string>	_errorPages;
 		std::vector<Location>		_locations;
 		int 						_maxBodySize;

@@ -120,7 +120,7 @@ Location Server::findLocation(HttpRequest const &request) const
 	Location defaultLocation;
 	defaultLocation.path = "";
 	defaultLocation.root = _root;
-	defaultLocation.dirListing = _defDirListing;
+	defaultLocation.autoIndex = _defAutoIndex;
 	defaultLocation.indexFiles = _defIndexFiles;
 	defaultLocation.allowedMethods = (Methods){true, false, false};
 	defaultLocation.isAlias = false;

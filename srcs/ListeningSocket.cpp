@@ -19,7 +19,7 @@ ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u
 
 	_address.sin_family = domain;
 	_address.sin_port = htons(port);
-	_address.sin_addr.s_addr = htonl(interface);
+	_address.sin_addr.s_addr = interface; // interface is already in network byte order by me, the boss of parsing
 
 	// bind socket
 	if (bind(_fd, (struct sockaddr*)&_address, sizeof(_address)) == -1)

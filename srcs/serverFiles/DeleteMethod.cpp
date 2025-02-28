@@ -34,7 +34,7 @@ HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location cons
 	{
 		if (location.path == getUploadLocation()->path)
 		{
-			response = genDirListing(targetPath, location);
+			response = genAutoIndex(targetPath, location);
 			return response;
 		}
 		response = genErrorPage(location, 403);

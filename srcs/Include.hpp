@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
+#include <arpa/inet.h>
 
 
 //ANSI color codes
@@ -40,7 +40,7 @@
 #define CYAN    "\033[36m"      /* Cyan */
 #define ORANGE  "\033[38;5;208m" /* Orange */
 
-#define BUFFERSIZE 524288
+#define BUFFERSIZE 4096
 
 #define UPLOAD_DIRECTORY "./uploads/"
 
@@ -51,18 +51,25 @@ struct Methods
 	bool DELETE;
 };
 
+
 // Definizione della struttura Location (location)
 struct Location
 {
     std::string path;                           // "/images", "/upload", "/" (default)
     std::string root;                           // "/var/www/site1"
-    bool dirListing;                            // true → mostra il contenuto della directory se non c'è un default file
+    bool autoIndex;                            // true → mostra il contenuto della directory se non c'è un default file
     bool upload;                                // true → se la location è per l'upload di file
     bool cgi;                                   // true → se la location è per l'esecuzione di script CGI
 	bool isAlias;                               // true → se la location è un alias
     std::vector<std::string> indexFiles;        // {"index.html", "index.htm", "default.html"}
     Methods allowedMethods;                     // {"GET", "POST", "DELETE"}
 	std::map<int, std::string> errorPages;      // {404 -> "custom_404.html"}
+};
+
+struct ListenConfig
+{
+    int port;                                   // 80, 443, etc.
+    u_long ip;                                  // INADDR_ANY, INADDR_LOOPBACK, etc.
 };
 
 // Definizione della struttura ServerConfig (server {})
@@ -72,6 +79,7 @@ struct ServerConfig
     int maxBodySize;                        // Dimensione massima del body
     Location defLocation;                   // Location Generale (se nessuna Location Specifica è trovata)
     std::vector<Location> locations;            // Rotte specifiche (location {})
+    std::vector<ListenConfig> listens;          // Configurazioni di ascolto};
 };
 
 struct HttpRequest
@@ -138,6 +146,5 @@ public:
         return statusMap;
     }
 };
-
 
 #endif

@@ -1,6 +1,12 @@
 #include "Server.hpp"
 
-HttpResponse Server::genDirListing(std::string const &path, Location const &location) const
+bool isScript(std::string const &targetPath)
+{
+	// controlla che sia richiesto un .py
+	return targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py";
+}
+
+HttpResponse Server::genAutoIndex(std::string const &path, Location const &location) const
 {
 	HttpResponse response;
 	std::ostringstream oss;
@@ -75,9 +81,9 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 			response.statusCode = 200;
 			response.statusMessage = "OK";
 		}
-		else if (location.dirListing)
+		else if (location.autoIndex)
 		{
-			response = genDirListing(targetPath, location);
+			response = genAutoIndex(targetPath, location);
 		}
 		else if (opendir(targetPath.c_str()) == NULL)
 		{
@@ -95,6 +101,8 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 		{
 			return genErrorPage(location, 301);
 		}
+		else if (location.cgi && isScript(targetPath))
+			response = execCgi(targetPath, request);
 		response.body = readFileContent(response, targetPath);
 		if (response.body == "Unsupported Media Type")
 			return genErrorPage(location, 415);

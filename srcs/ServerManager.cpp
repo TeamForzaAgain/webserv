@@ -126,6 +126,7 @@ void ServerManager::readClient(size_t &i)
     if (bytesRead == -1)
     {
         perror("recv error");
+        closeClient(i);
         return;
     }
 
@@ -150,6 +151,14 @@ void ServerManager::writeClient(size_t &i)
     if (bytesSent == -1)
     {
         perror("send error");
+        closeClient(i);
+        return;
+    }
+    if (bytesSent == 0)
+    {
+        // Significa che la connessione è chiusa o non più utilizzabile.
+        std::cout << "Client closed the connection (send returned 0), closing socket." << std::endl;
+        closeClient(i);
         return;
     }
 

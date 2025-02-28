@@ -2,7 +2,7 @@
 #define SERVERMANAGER_HPP
 
 #include "Include.hpp"
-#include "Server.hpp"
+#include "./serverFiles/Server.hpp"
 #include "ListeningSocket.hpp"
 #include "ClientSocket.hpp"
 
