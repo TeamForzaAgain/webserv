@@ -1,6 +1,6 @@
 #include "ServerManager.hpp"
 
-ClientSocket::ClientSocket(int fd, Server const *server) : Socket(fd),  _server(server),
+ClientSocket::ClientSocket(int fd, Server *server) : Socket(fd),  _server(server),
         _status(1), _lastActivity(time(NULL)), _keepAlive(false), _contentLength(0), _chunkLength(-1), _headersLenght(0),
         _toUpload(false)
 {}

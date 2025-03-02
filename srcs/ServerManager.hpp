@@ -14,9 +14,9 @@ class ServerManager
 
 		void newServer(int domain, int type, int protocol, int port, u_long interface,
 							ServerConfig const &serverConfig);
-		void newClient(int fd, Server const *server);
+		void newClient(int fd, Server *server);
 		void addPollFd(int fd);
-		Server const *findServerByHost(const std::string& host, Server const *currentServer);
+		Server *findServerByHost(const std::string& host, Server *currentServer);
 
 		void run();
 

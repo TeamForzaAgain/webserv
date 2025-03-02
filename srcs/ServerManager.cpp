@@ -59,7 +59,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     std::cout << "Nuovo server creato, nome " << serverConfig.hostName << ", IP " << interface << ", porta " << port << "." << std::endl;
 }
 
-void ServerManager::newClient(int fd, Server const *server)
+void ServerManager::newClient(int fd, Server *server)
 {
     ClientSocket *newClient = new ClientSocket(fd, server);
     _clientSockets.insert(std::make_pair(fd, newClient));
@@ -79,7 +79,7 @@ void ServerManager::registerClient(size_t i)
     std::cout << YELLOW << "New connection on socket " << newSocket << " on i: " << i << RESET << std::endl;
 
     // Trova il Server associato alla ListeningSocket
-    Server const *server = NULL;
+    Server *server = NULL;
     for (size_t j = 0; j < _servers.size(); j++)
     {
         if (_servers[j].getListeningSocket()->getFd() == _pollfds[i].fd)
@@ -215,7 +215,7 @@ void ServerManager::run()
     }
 }
 
-Server const *ServerManager::findServerByHost(const std::string& host, Server const *currentServer)
+Server *ServerManager::findServerByHost(const std::string& host, Server *currentServer)
 {
     if (!currentServer)
         return NULL; // Errore: nessun server attuale

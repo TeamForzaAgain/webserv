@@ -31,7 +31,7 @@ std::string genDefaultErrorPage(HttpResponse &response, int code)
 		<< "</head>\n"
 		<< "<body>\n"
 		<< "    <center>\n"
-		<< "        <h1>" << code << " " << message << "</h1>\n"
+		<< "		<h1>" << code << " " << message << "</h1>\n"
 		<< "    </center>\n"
 		<< "    <hr>\n"
 		<< "    <center>webzerv/TeamForzaAgain</center>\n"
@@ -91,11 +91,12 @@ bool isMethodAllowed(const Location &location, const std::string &method)
 	return false;
 }
 
-std::string Server::genResponse(HttpRequest const &request, int statusCode) const
+std::string Server::genResponse(HttpRequest &request, int statusCode)
 {
 	HttpResponse response;
 	Location location = findLocation(request);
 	std::cout << CYAN << "statusCode: " << statusCode << RESET << std::endl;
+
 	if (statusCode >= 100)
 		return genErrorPage(location, statusCode).toString();
 
@@ -104,12 +105,37 @@ std::string Server::genResponse(HttpRequest const &request, int statusCode) cons
 		response = genErrorPage(location, 405);
 		return response.toString();
 	}
+
+	request.parseCookies();
+
+	std::string session_id = request.cookies["session_id"];
+
+	if (session_id.empty() || sessionManager.getSession(session_id) == "")
+	{
+	    std::cout << "Invalid or non-existent session_id received: " << session_id << std::endl;
+	    session_id = sessionManager.createSession();
+	}
+
+	sessionManager.getSession(session_id);
+
+	response.setCookie("session_id", session_id, "Path=/; HttpOnly");
+
+	if (request.path == "/session/")
+	{
+		response.statusCode = 200;
+		response.statusMessage = "OK";
+		response.contentType = "text/html";
+		response.body = "<html><body>Session ID: " + session_id + "</body></html>";
+		return response.toString();
+	}
+
 	if (request.method == "GET")
 		response = genGetResponse(request, location);
-	if (request.method == "POST")
+	else if (request.method == "POST")
 		response = genPostResponse(request, location);
 	else if (request.method == "DELETE")
 		response = genDeleteResponse(request, location);
 
-    return response.toString();
+	return response.toString();
 }
+
