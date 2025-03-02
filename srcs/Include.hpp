@@ -87,8 +87,10 @@ struct HttpRequest
     std::string method;                       // "GET", "POST", "DELETE"
     std::string path;                         // "/index.html"
     std::map<std::string, std::string> headers; // "Host", "User-Agent", "Content-Length"
+    std::map<std::string, std::string> cookies;
     std::vector<char> body;                         // Contenuto del body (solo per POST/PUT)
 
+    void parseCookies();
     void clear();                               // Resetta la richiesta
 };
 
@@ -98,7 +100,9 @@ struct HttpResponse
     std::string statusMessage;               // "OK", "Not Found", "Internal Server Error"
     std::string contentType;                 // "text/html", "image/jpeg", "application/json"
 	std::string body;                         // Contenuto della risposta
+    std::map<std::string, std::string> cookies;
 
+    void setCookie(const std::string &name, const std::string &value, const std::string &attributes = "");
     std::string toString() const; // Converte la risposta in stringa HTTP
 };
 

@@ -73,7 +73,7 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         it = _request.headers.find("Host");
         if (it != _request.headers.end() && !it->second.empty())
         {
-            Server const *newServer = serverManager.findServerByHost(it->second, _server);
+            Server *newServer = serverManager.findServerByHost(it->second, _server);
             if (newServer)
                 _server = newServer;
         }

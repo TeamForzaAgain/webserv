@@ -11,7 +11,7 @@ class ServerManager;
 class ClientSocket : public Socket
 {
 	public:
-		ClientSocket(int fd, Server const *server);
+		ClientSocket(int fd, Server *server);
 		~ClientSocket();
 
 		void addBuffer(const char *buffer, int bytesRead);
@@ -28,7 +28,7 @@ class ClientSocket : public Socket
 
 	private:
 		int _fd;
-		Server const *_server;
+		Server *_server;
 		int _status;
 		std::vector<char> _buffer;
 		HttpRequest _request;
