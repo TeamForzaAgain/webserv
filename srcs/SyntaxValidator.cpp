@@ -18,6 +18,9 @@ SyntaxValidator::SyntaxValidator(std::stringstream &stream) : stream(stream)
 	validTokens.insert("max_body_size");
 }
 
+SyntaxValidator::~SyntaxValidator()
+{}
+
 bool SyntaxValidator::isValidToken(const std::string &token)
 {
 	return (validTokens.find(token) != validTokens.end());

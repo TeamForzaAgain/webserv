@@ -23,6 +23,7 @@ class SyntaxValidator
 
 	public:
 		SyntaxValidator(std::stringstream &stream);
+		~SyntaxValidator();
 		bool validate();
 };
 

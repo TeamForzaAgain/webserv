@@ -21,6 +21,9 @@ static std::vector<std::string> split (const std::string &s, char delim)
     return (result);
 }
 
+LogicValidator::~LogicValidator()
+{}
+
 bool LogicValidator::isValidPort(const std::string &value)
 {
 	std::vector<std::string> splitted = split(value, ':');

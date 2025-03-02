@@ -25,6 +25,7 @@ class LogicValidator
 
 	public:
 		LogicValidator(std::stringstream &stream);
+		~LogicValidator();
 		bool validate();
 };
 

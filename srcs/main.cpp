@@ -278,8 +278,6 @@ void signalHandler(int signum)
 	case SIGTERM:
 	case SIGHUP:
 		std::cerr << "[SignalHandler] Arresto del server in corso..." << std::endl;
-
-		exit(EXIT_SUCCESS);
 		break;
 
 	default:
@@ -348,18 +346,18 @@ int main(int ac, char **av)
 		{
 			for (size_t j = 0; j < parsedServers[i].listens.size(); j++)
 			{
-	   		serverManager.newServer(
-			AF_INET, 
-			SOCK_STREAM, 
-			0, 
-			parsedServers[i].listens[j].port, 
-			parsedServers[i].listens[j].ip, 
-			parsedServers[i]
-		);
-	}
-}
+	   			serverManager.newServer(
+				AF_INET, 
+				SOCK_STREAM, 
+				0, 
+				parsedServers[i].listens[j].port, 
+				parsedServers[i].listens[j].ip, 
+				parsedServers[i]
+				);
+			}
+		}
 
-serverManager.run();
+		serverManager.run();
 
 	}
 	catch (std::exception &e)
