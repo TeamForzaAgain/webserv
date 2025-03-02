@@ -1,50 +1,94 @@
 #include "Server.hpp"
+#include <sys/wait.h>  // waitpid
+#include <signal.h>    // kill
 
 HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &request) const
 {
     HttpResponse response;
 
     int pipe_in[2], pipe_out[2];
-    
     if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
     {
         return genErrorPage(Location(), 500);
     }
 
-    pid_t pid = fork();
-    if (pid < 0)
+    // Primo fork: esecuzione CGI
+    pid_t pidCgi = fork();
+    if (pidCgi < 0)
     {
         return genErrorPage(Location(), 500);
     }
-    else if (pid == 0) // Processo figlio (esegue CGI)
+    else if (pidCgi == 0) // Processo figlio: esegue CGI
     {
+        // Redireziona stdin/stdout
         dup2(pipe_in[0], STDIN_FILENO);
         dup2(pipe_out[1], STDOUT_FILENO);
+
+        // Chiudi i fd non utilizzati
         close(pipe_in[1]);
         close(pipe_out[0]);
 
+        // Imposta le variabili d'ambiente per la CGI
         setenv("REQUEST_METHOD", const_cast<char *>(request.method.c_str()), 1);
         setenv("SCRIPT_FILENAME", targetPath.c_str(), 1);
         std::ostringstream oss;
         oss << request.body.size();
         setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
+
         if (request.headers.find("Content-Type") != request.headers.end())
             setenv("CONTENT_TYPE", request.headers.find("Content-Type")->second.c_str(), 1);
 
-        char *const args[] = {const_cast<char *>("/usr/bin/python3.8"), const_cast<char *>(targetPath.c_str()), NULL};
+        // Esegui effettivamente lo script (qui Python) 
+        char *const args[] = {
+            const_cast<char *>("/usr/bin/python3.8"),
+            const_cast<char *>(targetPath.c_str()),
+            NULL
+        };
         if (execve(args[0], args, environ) == -1)
             perror(strerror(errno));
 
-        exit(1);
+        // Se execve fallisce
+        _exit(1);
     }
-    else // Processo padre
+    else
     {
-        close(pipe_in[0]);  // Chiude il lato di lettura della pipe_in
-        close(pipe_out[1]); // Chiude il lato di scrittura della pipe_out
+        // Processo padre: chiude i lati che non servono
+        close(pipe_in[0]);  // lettura non serve
+        close(pipe_out[1]); // scrittura non serve
 
+        // --- SECONDO FORK: processo watchdog ---
+        // Questo processo farà un sleep di TOT secondi,
+        // e se la CGI è ancora viva, la uccide.
+        pid_t pidWatch = fork();
+        if (pidWatch < 0)
+        {
+            // Se il secondo fork fallisce, continua senza watchdog
+            // (oppure kill del pidCgi, o genErrorPage...). A scelta:
+            kill(pidCgi, SIGTERM);
+            return genErrorPage(Location(), 500);
+        }
+        else if (pidWatch == 0)
+        {
+            // Watchdog
+            // Esempio: attendi 30 secondi
+            int TIMEOUT = 30;
+            sleep(TIMEOUT);
+
+            // Se dopo 30s la CGI è ancora viva, la killiamo
+            // Se è già terminata, kill fallirà (ESRCH).
+            kill(pidCgi, SIGTERM);
+            std::cerr << RED << "Watchdog killed CGI process" << std::endl;
+            // volendo potresti dare un attimo di tempo e poi kill -9
+            // sleep(1);
+            // kill(pidCgi, SIGKILL);
+
+            _exit(0); 
+        }
+
+        // Processo padre prosegue con l'I/O sulle pipe
+
+        // 1) Scrivi il body su pipe_in[1] usando poll
         struct pollfd fds[2];
-
-        // **1. Scrive il body della request usando `poll()`**
         fds[0].fd = pipe_in[1];
         fds[0].events = POLLOUT;
 
@@ -53,7 +97,9 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         {
             if (poll(fds, 1, -1) > 0 && (fds[0].revents & POLLOUT))
             {
-                ssize_t written = write(pipe_in[1], &request.body[bytesWritten], request.body.size() - bytesWritten);
+                ssize_t written = write(pipe_in[1],
+                                        &request.body[bytesWritten],
+                                        request.body.size() - bytesWritten);
                 if (written > 0)
                     bytesWritten += written;
                 else
@@ -62,16 +108,18 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         }
         close(pipe_in[1]);
 
-        // **2. Legge la risposta usando `poll()`**
+        // 2) Leggi la risposta dalla pipe_out[0]
         std::string cgiOutput;
         char buffer[1024];
-
         fds[0].fd = pipe_out[0];
         fds[0].events = POLLIN;
 
+        // Esempio: poll con 5 secondi per leggere
+        // (non è un "timeout" vero per la CGI, lo gestisce il watchdog).
         while (true)
         {
-            if (poll(fds, 1, 5000) > 0 && (fds[0].revents & POLLIN))
+            int ret = poll(fds, 1, 5000);
+            if (ret > 0 && (fds[0].revents & POLLIN))
             {
                 ssize_t bytesRead = read(pipe_out[0], buffer, sizeof(buffer) - 1);
                 if (bytesRead > 0)
@@ -80,21 +128,28 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
                     cgiOutput += buffer;
                 }
                 else
+                {
+                    // EOF o errore
                     break;
+                }
             }
             else
+            {
+                // Nessun dato, esco dal loop
                 break;
+            }
         }
         close(pipe_out[0]);
 
         if (cgiOutput.empty())
         {
+            // Nessun output: 204
             response.statusCode = 204;
             response.statusMessage = "No Content";
             return response;
         }
 
-        // **3. Estrae il Content-Type e rimuove gli header**
+        // 3) Parse degli header e Content-Type
         size_t headerEnd = cgiOutput.find("\r\n\r\n");
         if (headerEnd != std::string::npos)
         {
@@ -105,6 +160,7 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
                 if (ctEnd != std::string::npos)
                     response.contentType = cgiOutput.substr(ctPos + 13, ctEnd - (ctPos + 13));
             }
+            // Rimuovi la parte di header
             cgiOutput = cgiOutput.substr(headerEnd + 4);
         }
 

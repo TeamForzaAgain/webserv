@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-bool isScript(std::string const &targetPath)
+static bool isScript(std::string const &targetPath)
 {
 	// controlla che sia richiesto un .py
 	return targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py";

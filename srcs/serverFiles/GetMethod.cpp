@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-bool isScript(std::string const &targetPath)
+static bool isScript(std::string const &targetPath)
 {
 	// controlla che sia richiesto un .py
 	return targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py";
@@ -102,7 +102,10 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 			return genErrorPage(location, 301);
 		}
 		else if (location.cgi && isScript(targetPath))
+		{
 			response = execCgi(targetPath, request);
+			return response;
+		}
 		response.body = readFileContent(response, targetPath);
 		if (response.body == "Unsupported Media Type")
 			return genErrorPage(location, 415);
