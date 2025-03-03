@@ -234,7 +234,7 @@ Server const *ServerManager::findServerByHost(const std::string& host, Server co
     {
         // Controlliamo se il nome del server corrisponde e se usa la stessa ListeningSocket
         if (_servers[i].getServerName() == host && _servers[i].getListeningSocket() == listeningSocket)
-            return &_servers[i];
+			return &_servers[i];
     }
 
     return NULL; // Nessun server trovato

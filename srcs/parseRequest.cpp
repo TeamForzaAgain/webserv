@@ -36,6 +36,8 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         // Parsiamo gli header
         while (std::getline(stream, line) && !line.empty())
         {
+			if (!line.empty() && line[line.size() - 1] == '\r')
+				line.erase(line.size() - 1);
             size_t sep = line.find(": ");
             if (sep == std::string::npos)
                 return 400;
