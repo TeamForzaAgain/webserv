@@ -5,16 +5,6 @@
 
 volatile sig_atomic_t g_signal_status = 0;
 
-// void signalHandler(int signum)
-// {
-// 	std::cout << MAGENTA << "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." << RESET << std::endl;
-// 	if (signum == SIGCHLD)
-// 	{
-// 		while (waitpid(-1, NULL, WNOHANG) > 0)
-// 			;
-// 	}
-// }
-
 static bool hasConfExtension(const std::string &filename)
 {
 	if (filename.size() > 5 && filename.substr(filename.size() - 5) == ".conf")

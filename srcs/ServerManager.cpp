@@ -1,5 +1,7 @@
 #include "ServerManager.hpp"
 
+extern sig_atomic_t g_signal_status;
+
 ServerManager::ServerManager() : _activeLs(0)
 {}
 
@@ -180,6 +182,15 @@ void ServerManager::run()
 
         if (activity == -1)
         {
+            if (errno == EINTR)
+            {
+                if (g_signal_status == SIGINT || g_signal_status == SIGTERM || g_signal_status == SIGHUP)
+                {
+                    std::cerr << "[SignalHandler] Arresto del server in corso..." << std::endl;
+                    break;
+                }
+                continue;
+            }
             perror(strerror(errno));
             throw ServerManagerException();
         }
