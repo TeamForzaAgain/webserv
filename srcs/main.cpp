@@ -5,16 +5,6 @@
 
 volatile sig_atomic_t g_signal_status = 0;
 
-// void signalHandler(int signum)
-// {
-// 	std::cout << MAGENTA << "\nIntercettato il segnale (" << signum << "). Pulizia e uscita..." << RESET << std::endl;
-// 	if (signum == SIGCHLD)
-// 	{
-// 		while (waitpid(-1, NULL, WNOHANG) > 0)
-// 			;
-// 	}
-// }
-
 static bool hasConfExtension(const std::string &filename)
 {
 	if (filename.size() > 5 && filename.substr(filename.size() - 5) == ".conf")
@@ -260,7 +250,7 @@ std::vector<ServerConfig> parseServers(const std::vector<std::string> &serverBlo
 
 void handleSigChld()
 {
-    while (waitpid(-1, NULL, WNOHANG) > 0);
+	while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
 void signalHandler(int signum)
@@ -311,6 +301,67 @@ void setupSignalHandlers()
  * In caso di SIGINT, SIGTERM o SIGHUP, il server viene chiuso in modo controllato.
  */
 
+void validateServers(const std::vector<ServerConfig>& servers)
+{
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		if (servers[i].listens.empty())
+		{
+			std::cerr << RED << "Errore: Il server " << servers[i].hostName
+						<< " non ha alcuna direttiva 'listen' e sarà irraggiungibile." << RESET << std::endl;
+			throw std::runtime_error("Nessuna direttiva 'listen' definita per il server.");
+		}
+
+		if (servers[i].defLocation.root.empty())
+		{
+			std::cerr << RED << "Errore: Il server " << servers[i].hostName
+						<< " non ha una root directory definita." << RESET << std::endl;
+			throw std::runtime_error("Root directory non definita per il server.");
+		}
+
+		for (size_t j = 0; j < servers[i].locations.size(); j++)
+		{
+			const Location &loc = servers[i].locations[j];
+
+			if (loc.root.empty() && !loc.isAlias)
+			{
+				std::cerr << RED << "Errore: La location " << loc.path
+							<< " del server " << servers[i].hostName
+							<< " non ha una root o un alias definito." << RESET << std::endl;
+				throw std::runtime_error("Root directory non definita per la location.");
+			}
+
+			if (loc.allowedMethods.GET == false &&
+				loc.allowedMethods.POST == false &&
+				loc.allowedMethods.DELETE == false)
+				{
+				std::cerr << RED << "Errore: La location " << loc.path
+							<< " del server " << servers[i].hostName
+							<< " non permette alcun metodo HTTP valido." << RESET << std::endl;
+				throw std::runtime_error("Nessun metodo HTTP valido definito per la location.");
+			}
+		}
+	}
+}
+
+void initializeServers(const std::vector<ServerConfig>& servers, ServerManager& serverManager)
+{
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		for (size_t j = 0; j < servers[i].listens.size(); j++)
+		{
+			serverManager.newServer(
+				AF_INET, 
+				SOCK_STREAM, 
+				0, 
+				servers[i].listens[j].port, 
+				servers[i].listens[j].ip, 
+				servers[i]
+			);
+		}
+	}
+}
+
 int main(int ac, char **av)
 {
 	std::stringstream fileStream;
@@ -342,20 +393,9 @@ int main(int ac, char **av)
 
 		ServerManager serverManager;
 
-		for (size_t i = 0; i < parsedServers.size(); i++)
-		{
-			for (size_t j = 0; j < parsedServers[i].listens.size(); j++)
-			{
-	   			serverManager.newServer(
-				AF_INET, 
-				SOCK_STREAM, 
-				0, 
-				parsedServers[i].listens[j].port, 
-				parsedServers[i].listens[j].ip, 
-				parsedServers[i]
-				);
-			}
-		}
+		validateServers(parsedServers);
+
+		initializeServers(parsedServers, serverManager);
 
 		serverManager.run();
 
