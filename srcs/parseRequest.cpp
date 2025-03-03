@@ -100,6 +100,8 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         if (!_uploadFile.is_open())
         {
             std::string bodyStr(bodyPart.begin(), bodyPart.end());
+            if (bodyStr.find("\r\n") == std::string::npos)
+                return -1; // Body incompleto
             size_t filenamePos = bodyStr.find("filename=");
             std::string filename = "uploaded_file.bin";
             if (filenamePos != std::string::npos)
