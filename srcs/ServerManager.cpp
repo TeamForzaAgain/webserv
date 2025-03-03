@@ -185,10 +185,7 @@ void ServerManager::run()
             if (errno == EINTR)
             {
                 if (g_signal_status == SIGINT || g_signal_status == SIGTERM || g_signal_status == SIGHUP)
-                {
-                    std::cerr << "[SignalHandler] Arresto del server in corso..." << std::endl;
                     break;
-                }
                 continue;
             }
             perror(strerror(errno));

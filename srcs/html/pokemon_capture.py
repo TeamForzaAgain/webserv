@@ -8,7 +8,7 @@ import requests
 
 # **Mappatura delle Poké Ball con i loro moltiplicatori di cattura**
 POKEBALL_RATES = {
-    "Poké Ball": 1.0,
+    "Poke Ball": 1.0,
     "Great Ball": 1.5,
     "Ultra Ball": 2.0,
     "Master Ball": 255.0  # La Master Ball ha un tasso di cattura garantito
@@ -53,7 +53,7 @@ def simulate_catch(pokemon, pokeball):
         "pokemon": pokemon,
         "pokeball": pokeball,
         "caught": caught,
-        "message": f"Hai catturato {pokemon}!" if caught else f"{pokemon} si è liberato!",
+        "message": f"Hai catturato {pokemon}!" if caught else f"{pokemon} si e' liberato!",
         "catch_probability": round(catch_probability * 100, 2)  # Percentuale
     }
 
@@ -65,7 +65,11 @@ try:
 
     # **Estrae i dati dalla richiesta**
     pokemon = request_data.get("pokemon", "Unknown")
-    pokeball = request_data.get("pokeball", "Poké Ball")
+    pokeball = request_data.get("pokeball", "Poke Ball")
+    #stampa sullo standard error la pokemon e la pokeball
+    print(f"Pokemon: {pokemon}", file=sys.stderr)
+    print(f"Pokeball: {pokeball}", file=sys.stderr)
+
 
     # **Simula la cattura**
     result = simulate_catch(pokemon, pokeball)
