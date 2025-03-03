@@ -32,6 +32,7 @@ class Server
 		std::string joinPaths(const std::string& root, const std::string& path) const;
 		std::string readFileContent(HttpResponse &response, std::string const &filePath) const;
 		std::string findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const;
+		std::string urlDecodeOnce(const std::string &str) const;
 
 		void printServer() const;
 	private:

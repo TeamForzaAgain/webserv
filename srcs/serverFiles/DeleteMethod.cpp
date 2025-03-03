@@ -1,30 +1,5 @@
 #include "Server.hpp"
 
-// Decodifica UNA volta le sequenze %xx in caratteri (ad es. %20 -> ' ').
-std::string urlDecodeOnce(const std::string &encoded) {
-    std::ostringstream decoded;
-    
-    for (size_t i = 0; i < encoded.size(); ++i) {
-        if (encoded[i] == '%' && i + 2 < encoded.size()) {
-            // Prendi i due caratteri dopo il '%'
-            char h1 = encoded[i + 1];
-            char h2 = encoded[i + 2];
-            // Controlla che siano in [0-9A-Fa-f]
-            if (isxdigit(h1) && isxdigit(h2)) {
-                // Convertili in un carattere
-                char buf[3] = { h1, h2, '\0' };
-                int hexValue = std::strtol(buf, 0, 16);
-                decoded << static_cast<char>(hexValue);
-                i += 2; 
-                continue;
-            }
-        }
-        // Carattere normale o caso in cui %xx non è valido
-        decoded << encoded[i];
-    }
-    return decoded.str();
-}
-
 HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location const &location) const
 {
 	HttpResponse response;
