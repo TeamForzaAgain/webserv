@@ -115,7 +115,10 @@ std::string Server::genResponse(HttpRequest &request, int statusCode)
 	    std::cout << "Invalid or non-existent session_id received: " << session_id << std::endl;
 	    session_id = sessionManager.createSession();
 	}
-
+	else
+	{
+		std::cout << "✅ Valid session_id recognized: " << session_id << std::endl;
+	}
 	sessionManager.getSession(session_id);
 
 	response.setCookie("session_id", session_id, "Path=/; HttpOnly");
