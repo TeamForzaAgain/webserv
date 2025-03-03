@@ -45,9 +45,15 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
             NULL
         };
         if (execve(args[0], args, environ) == -1)
+        {
             perror(strerror(errno));
+            if (execve("/bin/true", (char *const []){NULL}, environ) == -1)
+            {
+                perror(strerror(errno));
+                _exit(1);
+            }
 
-        // Se execve fallisce
+        }
         _exit(1);
     }
     else
@@ -69,20 +75,41 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         }
         else if (pidWatch == 0)
         {
-            // Watchdog
-            // Esempio: attendi 30 secondi
-            int TIMEOUT = 30;
-            sleep(TIMEOUT);
-
-            // Se dopo 30s la CGI è ancora viva, la killiamo
-            // Se è già terminata, kill fallirà (ESRCH).
-            kill(pidCgi, SIGTERM);
-            std::cerr << RED << "Watchdog killed CGI process" << std::endl;
-            // volendo potresti dare un attimo di tempo e poi kill -9
-            // sleep(1);
-            // kill(pidCgi, SIGKILL);
-
-            _exit(0); 
+            // Watchdog process
+            int TIMEOUT = 30;   // Tempo massimo in secondi
+            int INTERVAL = 1;   // Ogni quanto controllare se la CGI è ancora viva
+        
+            for (int elapsed = 0; elapsed < TIMEOUT; elapsed += INTERVAL)
+            {
+                // Controlla se il processo CGI è ancora attivo
+                if (kill(pidCgi, 0) == -1)
+                {
+                    // Il processo CGI è già terminato, esci subito
+                    std::cout << RED << "Watchdog: CGI process already terminated" << RESET << std::endl;
+                    if (execve("/bin/true", (char *const []){NULL}, environ) == -1)
+                    {
+                        perror(strerror(errno));
+                        _exit(1);
+                    }
+                }
+            
+                // Attendi un secondo prima di controllare di nuovo
+                sleep(INTERVAL);
+            }
+        
+            // Se dopo TIMEOUT secondi la CGI è ancora viva, la killiamo
+            if (kill(pidCgi, 0) == 0)
+            {
+                kill(pidCgi, SIGTERM);
+                std::cerr << RED << "Watchdog killed CGI process" << RESET << std::endl;
+            }
+        
+            // Esci senza disturbare il processo padre
+            if (execve("/bin/true", (char *const []){NULL}, environ) == -1)
+            {
+                perror(strerror(errno));
+                _exit(1);
+            }
         }
 
         // Processo padre prosegue con l'I/O sulle pipe
