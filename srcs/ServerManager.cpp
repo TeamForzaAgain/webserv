@@ -1,5 +1,7 @@
 #include "ServerManager.hpp"
 
+extern volatile sig_atomic_t g_signal_status;
+
 ServerManager::ServerManager() : _activeLs(0)
 {}
 
@@ -180,6 +182,10 @@ void ServerManager::run()
 
         if (activity == -1)
         {
+            if (g_signal_status != 0)
+            {
+                return ;
+            }
             perror(strerror(errno));
             throw ServerManagerException();
         }
