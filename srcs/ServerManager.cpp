@@ -180,12 +180,24 @@ void ServerManager::run()
         std::cout << RED << "Polling..." << RESET << std::endl;
         int activity = poll(_pollfds.data(), _pollfds.size(), 10000);
 
+        // **Gestione del segnale di interruzione**
+        if (g_signal_status != 0)
+        {
+            // **Chiudere tutte le connessioni attive**
+            for (size_t i = 0; i < _pollfds.size(); i++)
+            {
+                closeClient(i);
+            }
+
+            _pollfds.clear();
+            _clientSockets.clear();
+
+            std::cout << "[ServerManager] Server chiuso correttamente." << std::endl;
+            return ;
+        }
+
         if (activity == -1)
         {
-            if (g_signal_status != 0)
-            {
-                return ;
-            }
             perror(strerror(errno));
             throw ServerManagerException();
         }
