@@ -266,7 +266,7 @@ void handleSigChld()
 void signalHandler(int signum)
 {
 	g_signal_status = signum;
-	std::cerr << "\n[SignalHandler] Intercettato segnale (" << signum << ")." << std::endl;
+	std::cerr << BLUE << "\n[SignalHandler] Intercettato segnale (" << signum << ")." << RESET << std::endl;
 
 	switch (signum)
 	{
@@ -277,11 +277,11 @@ void signalHandler(int signum)
 	case SIGINT:
 	case SIGTERM:
 	case SIGHUP:
-		std::cerr << "[SignalHandler] Arresto del server in corso..." << std::endl;
+		std::cerr << BLUE << "[SignalHandler] Arresto del server in corso..." << RESET << std::endl;
 		break;
 
 	default:
-		std::cerr << "[SignalHandler] Segnale non gestito: " << signum << std::endl;
+		std::cerr << BLUE << "[SignalHandler] Segnale non gestito: " << signum << RESET << std::endl;
 		break;
 	}
 }
