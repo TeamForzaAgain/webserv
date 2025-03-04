@@ -195,6 +195,45 @@ static const std::set<std::string> &getValidBooleans()
 	return (validBooleans);
 }
 
+bool LogicValidator::isValidUrl(const std::string &url) {
+    return url.find("http://") == 0 || url.find("https://") == 0 || url[0] == '/';
+}
+
+bool LogicValidator::isValidHttpStatus(const std::string &code) {
+    static const std::string validStatuses[] = {
+        "200", "301", "302", "307", "308", "400", "403", "404", "500", "502", "503"
+    };
+    for (size_t i = 0; i < 10; ++i) {
+        if (code == validStatuses[i]) return true;
+    }
+    return false;
+}
+
+void LogicValidator::validateReturn(const std::string &value, int lineNumber) {
+    std::istringstream iss(value);
+    std::string statusCode, url;
+    
+    if (!(iss >> statusCode)) {
+        std::ostringstream oss;
+        oss << "Riga " << lineNumber << ": `return` richiede almeno un codice di stato HTTP.";
+        throw std::invalid_argument(oss.str());
+    }
+
+    if (!isValidHttpStatus(statusCode)) {
+        std::ostringstream oss;
+        oss << "Riga " << lineNumber << ": Codice di stato HTTP non valido `" << statusCode << "`.";
+        throw std::invalid_argument(oss.str());
+    }
+
+    if (iss >> url) { 
+        if (!isValidUrl(url)) {
+            std::ostringstream oss;
+            oss << "Riga " << lineNumber << ": URL non valido `" << url << "` per `return`.";
+            throw std::invalid_argument(oss.str());
+        }
+    }
+}
+
 bool LogicValidator::validateDirective(const std::string &token, const std::string &value, int lineNumber)
 {
 	if (token == "listen")
@@ -234,6 +273,9 @@ bool LogicValidator::validateDirective(const std::string &token, const std::stri
 			oss << "Riga " << lineNumber << ": `max_body_size` non valida `" << value << "`.";
 			throw std::invalid_argument(oss.str());
 		}
+	} else if (token == "return")
+	{
+		validateReturn(value, lineNumber);
 	}
 	return (true);
 }
@@ -255,7 +297,7 @@ bool LogicValidator::validate()
 
 			// **Se la direttiva è tra quelle che richiedono un valore**
 			if (token == "listen" || token == "methods" || token == "auto_index" ||
-				token == "alias" || token == "upload" || token == "cgi" || token == "max_body_size")
+				token == "alias" || token == "upload" || token == "return" || token == "cgi" || token == "max_body_size")
 			{
 				fullValue = "";
 

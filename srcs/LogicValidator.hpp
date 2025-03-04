@@ -22,7 +22,9 @@ class LogicValidator
 		bool isValidMethod(const std::string &method);
 		bool validateBlockStructure(const std::string &token, int lineNumber);
 		bool validateDirective(const std::string &token, const std::string &value, int lineNumber);
-
+		void validateReturn(const std::string &value, int lineNumber);
+		bool isValidUrl(const std::string &url);
+		bool isValidHttpStatus(const std::string &code);
 	public:
 		LogicValidator(std::stringstream &stream);
 		~LogicValidator();

@@ -51,6 +51,11 @@ struct Methods
 	bool DELETE;
 };
 
+struct ReturnConfig
+{
+    int code;
+    std::string url;
+};
 
 // Definizione della struttura Location (location)
 struct Location
@@ -64,6 +69,7 @@ struct Location
     std::vector<std::string> indexFiles;        // {"index.html", "index.htm", "default.html"}
     Methods allowedMethods;                     // {"GET", "POST", "DELETE"}
 	std::map<int, std::string> errorPages;      // {404 -> "custom_404.html"}
+    ReturnConfig returnConfig;                  // {200, "/path/to/file"}
 };
 
 struct ListenConfig
@@ -80,6 +86,7 @@ struct ServerConfig
     Location defLocation;                   // Location Generale (se nessuna Location Specifica è trovata)
     std::vector<Location> locations;            // Rotte specifiche (location {})
     std::vector<ListenConfig> listens;          // Configurazioni di ascolto};
+    ReturnConfig defaultReturn;                  // {200, "/path/to/file"}
 };
 
 struct HttpRequest

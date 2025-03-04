@@ -16,6 +16,7 @@ SyntaxValidator::SyntaxValidator(std::stringstream &stream) : stream(stream)
 	validTokens.insert("cgi");
 	validTokens.insert("methods");
 	validTokens.insert("max_body_size");
+    validTokens.insert("return");
 }
 
 SyntaxValidator::~SyntaxValidator()
@@ -43,6 +44,7 @@ static const std::set<std::string> &getDirectivesRequiringSemicolon()
 		directives.insert("cgi");
 		directives.insert("methods");
 		directives.insert("max_body_size");
+        directives.insert("return");
 	}
 	return (directives);
 }
@@ -51,11 +53,11 @@ bool SyntaxValidator::checkSemicolon(const std::string &token, const std::string
 {
     if (getDirectivesRequiringSemicolon().find(token) != getDirectivesRequiringSemicolon().end())
     {
-        size_t pos = line.find(token); // Troviamo la direttiva nella riga
+        size_t pos = line.find(token);
         if (pos != std::string::npos)
         {
             size_t semicolonPos = line.find(';', pos);
-            if (semicolonPos == std::string::npos) // Se non trova `;`, errore
+            if (semicolonPos == std::string::npos)
             {
 				std::ostringstream oss;
 				oss << "Riga " << lineNumber << ": Direttiva `" << token << "` senza `;`.";

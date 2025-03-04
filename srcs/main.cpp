@@ -197,7 +197,8 @@ std::vector<ServerConfig> parseServers(const std::vector<std::string> &serverBlo
 					else if (value == "POST") currentLocation.allowedMethods.POST = true;
 					else if (value == "DELETE") currentLocation.allowedMethods.DELETE = true;
 				}
-			} else
+			} 
+			else
 			{
 				iss >> value;
 				if (insideLocation)
@@ -208,7 +209,17 @@ std::vector<ServerConfig> parseServers(const std::vector<std::string> &serverBlo
 					else if (key == "cgi") currentLocation.cgi = (value == "on");
 					else if (key == "alias") currentLocation.isAlias = (value == "on");
 					else if (key == "index") currentLocation.indexFiles.push_back(value);
-				} else
+					else if (key == "return")
+					{
+						int returnCode;
+						std::string returnUrl;
+						returnCode = atoi(value.c_str());
+						iss >> returnUrl;
+						currentLocation.returnConfig.code = returnCode;
+						currentLocation.returnConfig.url = returnUrl;
+					}
+				} 
+				else
 				{
 					if (key == "server_name") server.hostName = value;
 					else if (key == "max_body_size") server.maxBodySize = static_cast<int>(strtol(value.c_str(), NULL, 10));
@@ -233,12 +244,22 @@ std::vector<ServerConfig> parseServers(const std::vector<std::string> &serverBlo
 							else
 								listenConfig.ip = inet_addr(ipString.c_str());
 							listenConfig.port = atoi(value.substr(colonPos + 1).c_str());
-						} else
+						} 
+						else
 						{
 							listenConfig.ip = INADDR_ANY;
 							listenConfig.port = atoi(value.c_str());
 						}
 						server.listens.push_back(listenConfig);
+					}
+					else if (key == "return")
+					{
+						int returnCode;
+						std::string returnUrl;
+						returnCode = atoi(value.c_str());
+						iss >> returnUrl;
+						server.defaultReturn.code = returnCode;
+						server.defaultReturn.url = returnUrl;
 					}
 				}
 			}
@@ -247,6 +268,7 @@ std::vector<ServerConfig> parseServers(const std::vector<std::string> &serverBlo
 	}
 	return servers;
 }
+
 
 void handleSigChld()
 {
@@ -301,46 +323,133 @@ void setupSignalHandlers()
  * In caso di SIGINT, SIGTERM o SIGHUP, il server viene chiuso in modo controllato.
  */
 
-void validateServers(const std::vector<ServerConfig>& servers)
+void checkDuplicateLocations(const std::vector<Location>& locations)
 {
+	std::set<std::string> locationSet;
+	for (size_t i = 0; i < locations.size(); ++i)
+	{
+		if (!locationSet.insert(locations[i].path).second)
+		{
+			std::cerr << "Errore: Location duplicata trovata: " << locations[i].path << std::endl;
+			throw std::runtime_error("Location duplicata trovata.");
+		}
+	}
+}
+
+void checkListenDirective(const ServerConfig& server)
+{
+	if (server.listens.empty())
+	{
+		std::cerr << RED << "Errore: Il server " << server.hostName
+					<< " non ha alcuna direttiva 'listen' e sarà irraggiungibile." << RESET << std::endl;
+		throw std::runtime_error("Nessuna direttiva 'listen' definita per il server.");
+	}
+}
+
+void checkRootDirectory(const ServerConfig& server)
+{
+	if (server.defLocation.root.empty())
+	{
+		std::cerr << RED << "Errore: Il server " << server.hostName
+					<< " non ha una root directory definita." << RESET << std::endl;
+		throw std::runtime_error("Root directory non definita per il server.");
+	}
+}
+
+void checkLocationValidity(const ServerConfig& server, const Location& loc)
+{
+	if (loc.root.empty() && !loc.isAlias)
+	{
+		std::cerr << RED << "Errore: La location " << loc.path
+					<< " del server " << server.hostName
+					<< " non ha una root o un alias definito." << RESET << std::endl;
+		throw std::runtime_error("Root directory non definita per la location.");
+	}
+
+	if (!loc.allowedMethods.GET && !loc.allowedMethods.POST && !loc.allowedMethods.DELETE)
+	{
+		std::cerr << RED << "Errore: La location " << loc.path
+					<< " del server " << server.hostName
+					<< " non permette alcun metodo HTTP valido." << RESET << std::endl;
+		throw std::runtime_error("Nessun metodo HTTP valido definito per la location.");
+	}
+}
+
+void checkLocations(const ServerConfig& server)
+{
+	for (size_t j = 0; j < server.locations.size(); j++)
+	{
+		checkLocationValidity(server, server.locations[j]);
+	}
+}
+
+void checkDuplicateListen(const std::vector<ServerConfig>& servers)
+{
+	std::set<std::string> listenSet;
+	std::set<int> wildcardPorts;
+
 	for (size_t i = 0; i < servers.size(); i++)
 	{
-		if (servers[i].listens.empty())
-		{
-			std::cerr << RED << "Errore: Il server " << servers[i].hostName
-						<< " non ha alcuna direttiva 'listen' e sarà irraggiungibile." << RESET << std::endl;
-			throw std::runtime_error("Nessuna direttiva 'listen' definita per il server.");
-		}
+		std::set<std::string> localListenSet;
+		std::set<int> localWildcardPorts;
 
-		if (servers[i].defLocation.root.empty())
+		for (size_t j = 0; j < servers[i].listens.size(); j++)
 		{
-			std::cerr << RED << "Errore: Il server " << servers[i].hostName
-						<< " non ha una root directory definita." << RESET << std::endl;
-			throw std::runtime_error("Root directory non definita per il server.");
-		}
+			std::string ipStr = inet_ntoa(*(struct in_addr*)&servers[i].listens[j].ip);
+			int port = servers[i].listens[j].port;
 
-		for (size_t j = 0; j < servers[i].locations.size(); j++)
-		{
-			const Location &loc = servers[i].locations[j];
+			std::ostringstream portStr;
+			portStr << port;
+			std::string portKey = portStr.str();
 
-			if (loc.root.empty() && !loc.isAlias)
+			std::ostringstream oss;
+			oss << ipStr << ":" << port;
+			std::string listenKey = oss.str();
+
+			if (localWildcardPorts.count(port))
 			{
-				std::cerr << RED << "Errore: La location " << loc.path
-							<< " del server " << servers[i].hostName
-							<< " non ha una root o un alias definito." << RESET << std::endl;
-				throw std::runtime_error("Root directory non definita per la location.");
+				std::cerr << RED << "[ERRORE] Conflitto: il server tenta di ascoltare su " << listenKey
+						  << " ma la porta " << port << " è già occupata da una wildcard interna (0.0.0.0)." 
+						  << RESET << std::endl;
+				throw std::runtime_error("Conflitto di listen interno al server.");
 			}
 
-			if (loc.allowedMethods.GET == false &&
-				loc.allowedMethods.POST == false &&
-				loc.allowedMethods.DELETE == false)
+			if (!localListenSet.insert(listenKey).second)
+			{
+				std::cerr << RED << "[ERRORE] La porta " << port
+						  << " sull'indirizzo " << ipStr
+						  << " è già usata da un'altra location dello stesso server!" << RESET << std::endl;
+				throw std::runtime_error("Conflitto di listen interno al server.");
+			}
+
+			if (ipStr == "0.0.0.0")
+			{
+				localWildcardPorts.insert(port);
+
+				for (std::set<std::string>::iterator it = localListenSet.begin(); it != localListenSet.end(); ++it)
 				{
-				std::cerr << RED << "Errore: La location " << loc.path
-							<< " del server " << servers[i].hostName
-							<< " non permette alcun metodo HTTP valido." << RESET << std::endl;
-				throw std::runtime_error("Nessun metodo HTTP valido definito per la location.");
+					if (it->find(":" + portKey) != std::string::npos)
+					{
+						std::cerr << RED << "[ERRORE] Conflitto: il server tenta di ascoltare su 0.0.0.0:" << port
+								  << " ma questa porta è già usata da un IP specifico all'interno dello stesso server!" << RESET << std::endl;
+						throw std::runtime_error("Conflitto di listen interno al server.");
+					}
+				}
 			}
 		}
+	}
+}
+
+void validateServers(const std::vector<ServerConfig>& servers)
+{
+	checkDuplicateListen(servers);
+
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		checkListenDirective(servers[i]);
+		checkRootDirectory(servers[i]);
+		checkDuplicateLocations(servers[i].locations);
+		checkLocations(servers[i]);
 	}
 }
 
