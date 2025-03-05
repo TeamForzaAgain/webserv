@@ -36,6 +36,8 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         // Parsiamo gli header
         while (std::getline(stream, line) && !line.empty())
         {
+			if (!line.empty() && line[line.size() - 1] == '\r')
+				line.erase(line.size() - 1);
             size_t sep = line.find(": ");
             if (sep == std::string::npos)
                 return 400;
@@ -100,6 +102,8 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
         if (!_uploadFile.is_open())
         {
             std::string bodyStr(bodyPart.begin(), bodyPart.end());
+            if (bodyStr.find("\r\n") == std::string::npos)
+                return -1; // Body incompleto
             size_t filenamePos = bodyStr.find("filename=");
             std::string filename = "uploaded_file.bin";
             if (filenamePos != std::string::npos)

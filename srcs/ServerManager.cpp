@@ -198,6 +198,12 @@ void ServerManager::run()
 
         if (activity == -1)
         {
+            if (errno == EINTR)
+            {
+                if (g_signal_status == SIGINT || g_signal_status == SIGTERM || g_signal_status == SIGHUP)
+                    break;
+                continue;
+            }
             perror(strerror(errno));
             throw ServerManagerException();
         }
@@ -244,7 +250,7 @@ Server *ServerManager::findServerByHost(const std::string& host, Server *current
     {
         // Controlliamo se il nome del server corrisponde e se usa la stessa ListeningSocket
         if (_servers[i].getServerName() == host && _servers[i].getListeningSocket() == listeningSocket)
-            return &_servers[i];
+			return &_servers[i];
     }
 
     return NULL; // Nessun server trovato
