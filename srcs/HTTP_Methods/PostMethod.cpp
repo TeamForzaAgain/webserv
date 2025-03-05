@@ -9,10 +9,12 @@ HttpResponse Server::genPostResponse(HttpRequest const &request, Location const 
 	
 	//controlla se la location e' quella di upload usando getUploadLocation()
 	Location const *uploadLocation = getUploadLocation();
-	if (uploadLocation && uploadLocation->path == location.path)
+	std::map<std::string, std::string>::const_iterator it = request.headers.find("Content-Type");
+	if (uploadLocation && uploadLocation->path == location.path &&
+			it != request.headers.end() && it->second.find("multipart/form-data") == 0)
 	{
 		std::string filename;
-		std::map<std::string, std::string>::const_iterator it = request.headers.find("filename");
+		it = request.headers.find("filename");
 		if (it != request.headers.end()) 
     		filename = it->second;
 		else
