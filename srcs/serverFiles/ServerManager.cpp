@@ -7,7 +7,6 @@ ServerManager::ServerManager() : _activeLs(0)
 
 ServerManager::~ServerManager()
 {
-    std::cout << "Distruttore ServerManager" << std::endl;
     _pollfds.clear();
 
     for (size_t i = 0; i < _pollfds.size(); i++)
@@ -43,7 +42,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
         if (ls->getPort() == port && (ls->getInterface() == interface || ls->getInterface() == INADDR_ANY))
         {
             _servers.push_back(Server(ls, serverConfig));
-            std::cout << "Nuovo server creato, nome " << serverConfig.hostName << ", IP " << inet_ntoa(*(struct in_addr*)&interface) << ", porta " << port << "." << std::endl;
+            std::cout << "[ServerManager] Nuovo server creato, nome " << serverConfig.hostName << ", IP " << inet_ntoa(*(struct in_addr*)&interface) << ", porta " << port << "." << std::endl;
             return;
         }
     }
@@ -58,7 +57,7 @@ void ServerManager::newServer(int domain, int type, int protocol, int port, u_lo
     // Aggiungiamo la nuova socket al poll
     addPollFd(_listeningSockets.back()->getFd());
 
-    std::cout << "Nuovo server creato, nome " << serverConfig.hostName << ", IP " << inet_ntoa(*(struct in_addr*)&interface) << ", porta " << port << "." << std::endl;
+    std::cout << "[ServerManager] Nuovo server creato, nome " << serverConfig.hostName << ", IP " << inet_ntoa(*(struct in_addr*)&interface) << ", porta " << port << "." << std::endl;
 }
 
 void ServerManager::newClient(int fd, Server *server)
@@ -66,7 +65,6 @@ void ServerManager::newClient(int fd, Server *server)
     ClientSocket *newClient = new ClientSocket(fd, server);
     _clientSockets.insert(std::make_pair(fd, newClient));
 
-    std::cout << "Nuovo client connesso: " << fd << std::endl;
 }
 
 void ServerManager::registerClient(size_t i)
@@ -78,7 +76,7 @@ void ServerManager::registerClient(size_t i)
         throw ServerManagerException();
     }
 
-    std::cout << YELLOW << "New connection on socket " << newSocket << " on i: " << i << RESET << std::endl;
+	std::cout << YELLOW << "[ServerManager] Nuova connessione sulla socket " << newSocket << RESET << std::endl;
 
     // Trova il Server associato alla ListeningSocket
     Server *server = NULL;
@@ -93,7 +91,7 @@ void ServerManager::registerClient(size_t i)
 
     if (!server)
     {
-        std::cerr << "Errore: nessun server trovato per la socket " << _pollfds[i].fd << std::endl;
+        std::cerr << RED << "[ServerManager] Errore: nessun server trovato per la socket " << _pollfds[i].fd << std::endl;
         close(newSocket);
         return;
     }
@@ -104,7 +102,7 @@ void ServerManager::registerClient(size_t i)
 
 void ServerManager::closeClient(size_t &i)
 {
-    std::cout << MAGENTA << "Closing socket " << _pollfds[i].fd << RESET << std::endl;
+	std::cout << YELLOW << "[ServerManager] Chiusura della socket " << _pollfds[i].fd << RESET << std::endl;
     close(_pollfds[i].fd);
     delete _clientSockets[_pollfds[i].fd];
     _clientSockets[_pollfds[i].fd] = NULL;
@@ -115,13 +113,12 @@ void ServerManager::closeClient(size_t &i)
 
 void ServerManager::readClient(size_t &i)
 {
-    std::cout << YELLOW << "Reading from socket " << _pollfds[i].fd << RESET << std::endl;
+	std::cout << YELLOW << "[ServerManager] Lettura dalla socket " << _pollfds[i].fd << RESET << std::endl;
     char tempBuffer[BUFFERSIZE];
     int bytesRead = recv(_pollfds[i].fd, tempBuffer, BUFFERSIZE - 1, 0);
 
     if (bytesRead == 0) // Il client ha chiuso la connessione
     {
-        std::cout << MAGENTA << "Client disconnected, closing socket " << _pollfds[i].fd << RESET << std::endl;
         closeClient(i);
         return;
     }
@@ -146,7 +143,7 @@ void ServerManager::readClient(size_t &i)
 void ServerManager::writeClient(size_t &i)
 {
     std::string response = _clientSockets[_pollfds[i].fd]->getResponse();
-    std::cout << GREEN << "Sending response: " << response << RESET << std::endl;
+	std::cout << YELLOW << "[ServerManager] Invio risposta al client: " << _pollfds[i].fd << RESET << std::endl;
 
     int bytesSent = send(_pollfds[i].fd, response.c_str(), response.size(), 0);
     if (bytesSent == -1)
@@ -158,14 +155,13 @@ void ServerManager::writeClient(size_t &i)
     if (bytesSent == 0)
     {
         // Significa che la connessione è chiusa o non più utilizzabile.
-        std::cout << "Client closed the connection (send returned 0), closing socket." << std::endl;
         closeClient(i);
         return;
     }
 
     if (!_clientSockets[_pollfds[i].fd]->getKeepAlive())
     {
-        std::cout << MAGENTA << "Client disconnected, closing socket " << _pollfds[i].fd << RESET << std::endl;
+        std::cout << YELLOW << "[ServerManager] Client disconnesso, " << RESET;
         closeClient(i);
         return;
     }
@@ -176,7 +172,7 @@ void ServerManager::run()
 {
     while (true)
     {
-        std::cout << RED << "Polling..." << RESET << std::endl;
+        std::cout << GREEN << "[ServerManager] Polling..." << RESET << std::endl;
         poll(_pollfds.data(), _pollfds.size(), 10000);
 		if (g_signal_status != 0)
 		{
@@ -191,12 +187,13 @@ void ServerManager::run()
 				_clientSockets.clear();
 
 				std::cout << "[ServerManager] Server chiuso correttamente." << std::endl;
+				sleep(2);
 				return ;
 			}
 			g_signal_status = 0;
 		}
 
-        std::cout << RED << "Active listening sockets: " << _activeLs << RESET << std::endl;
+        std::cout << GREEN << "[ServerManager] Listening sockets attive: " << _activeLs << RESET << std::endl;
 
         // **Gestione delle nuove connessioni**
         for (size_t i = 0; i < _activeLs; i++)
@@ -213,7 +210,7 @@ void ServerManager::run()
 
             else if (_pollfds[i].revents == 0 &&_clientSockets[_pollfds[i].fd]->getLastActivity() + 30 < time(NULL))
             {
-                std::cout << MAGENTA << "Client timeout, closing socket " << _pollfds[i].fd << RESET << std::endl;
+                std::cout << YELLOW << "[ServerManager] Client timeout, " << RESET;
                 closeClient(i);
             }
 

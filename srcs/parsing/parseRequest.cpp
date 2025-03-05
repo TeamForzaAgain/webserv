@@ -69,7 +69,6 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                 if (_boundary[_boundary.size() - 1] == '\r')
                     _boundary.erase(_boundary.size() - 1);
             }
-            std::cout << CYAN << "Boundary: " << _boundary << RESET << std::endl;
         }
 
         it = _request.headers.find("Host");
@@ -149,7 +148,6 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             std::vector<char>::iterator boundaryPos = std::search(bodyPart.begin(), bodyPart.end(), _boundary.begin(), _boundary.end());
             if (boundaryPos != bodyPart.end())
             {
-                std::cout << YELLOW << "Boundary found" << RESET << std::endl;
                 while (boundaryPos != bodyPart.begin() && *(boundaryPos - 1) == '\n')
                     --boundaryPos;
                 _bytesWritten += boundaryPos - bodyPart.begin();
@@ -171,7 +169,6 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
             if ((int)_request.body.size() >= _contentLength)
                 return 1; // Completa
         }
-        std::cout << ORANGE << _request.body.size() << " / " << _contentLength << RESET << std::endl;
         return 0; // Incompleta
     }
     else if (_chunkLength != -1) // Gestione chunked
@@ -209,7 +206,6 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                 std::vector<char>::iterator boundaryPos = std::search(bodyPart.begin(), bodyPart.end(), _boundary.begin(), _boundary.end());
                 if (boundaryPos != bodyPart.end())
                 {
-                    std::cout << YELLOW << "Boundary found" << RESET << std::endl;
                     while (boundaryPos != bodyPart.begin() && *(boundaryPos - 1) == '\n')
                         --boundaryPos;
                     _bytesWritten += boundaryPos - bodyPart.begin();

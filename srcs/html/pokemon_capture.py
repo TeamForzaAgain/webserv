@@ -67,8 +67,6 @@ try:
     pokemon = request_data.get("pokemon", "Unknown")
     pokeball = request_data.get("pokeball", "Poke Ball")
     #stampa sullo standard error la pokemon e la pokeball
-    print(f"Pokemon: {pokemon}", file=sys.stderr)
-    print(f"Pokeball: {pokeball}", file=sys.stderr)
 
 
     # **Simula la cattura**
@@ -82,4 +80,4 @@ try:
 except Exception as e:
     print("Content-Type: application/json\r")
     print("\r")
-    print(json.dumps({"error": "Richiesta non valida", "message": str(e)}))
+    print(json.dumps({"error": "Bad Request", "message": str(e)}))

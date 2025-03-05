@@ -2,6 +2,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+extern volatile sig_atomic_t g_signal_status;
+
 HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &request) const
 {
     HttpResponse response;
@@ -94,13 +96,23 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
                 if (kill(pidCgi, 0) == -1)
                 {
                     // Il processo CGI è già terminato, esci subito
-                    std::cout << RED << "Watchdog: CGI process already terminated" << RESET << std::endl;
+                    std::cerr << RED << "[Watchdog] processo CGI gia' terminato. Uscendo..." << RESET << std::endl;
                     if (execve("/bin/true", (char *const []){NULL}, environ) == -1)
                     {
                         perror(strerror(errno));
                         _exit(1);
                     }
                 }
+				if (g_signal_status == SIGTERM || g_signal_status == SIGINT)
+				{
+					kill(pidCgi, SIGTERM);
+                	std::cerr << RED << "[Watchdog] ricevuto segnale di chiusura. Uscendo..." << RESET << std::endl;
+					if (execve("/bin/true", (char *const []){NULL}, environ) == -1)
+					{
+						perror(strerror(errno));
+						_exit(1);
+					}
+				}
             
                 // Attendi un secondo prima di controllare di nuovo
                 sleep(INTERVAL);
@@ -110,7 +122,7 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
             if (kill(pidCgi, 0) == 0)
             {
                 kill(pidCgi, SIGTERM);
-                std::cerr << RED << "Watchdog killed CGI process" << RESET << std::endl;
+                std::cerr << RED << "[Watchdog] processo CGI terminato. Uscendo..." << RESET << std::endl;
             }
         
             // Esci senza disturbare il processo padre

@@ -37,7 +37,7 @@ void HttpRequest::parseCookies()
 
 void HttpResponse::setCookie(const std::string &name, const std::string &value, const std::string &attributes)
 {
-	std::cout << "🔹 Setting Set-Cookie header: " << name << "=" << value << "; " << attributes << std::endl;
+	std::cout << "[CookieSessionManager] Impostazione dell'intestazione Set-Cookie: " << name << "=" << value << "; " << attributes << std::endl;
 	cookies[name] = value + (attributes.empty() ? "" : "; " + attributes);
 }
 
@@ -53,7 +53,7 @@ std::string HttpResponse::toString() const
 		requestStream << "Location: " << location << "\r\n";
 	for (std::map<std::string, std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
     {
-        std::cout << "🔹 Sending Set-Cookie: " << it->first << "=" << it->second << std::endl;
+		std::cout << "[CookieSessionManager] Invio Set-Cookie: " << it->first << "=" << it->second << std::endl;
         requestStream << "Set-Cookie: " << it->first << "=" << it->second << "\r\n";
     }
 

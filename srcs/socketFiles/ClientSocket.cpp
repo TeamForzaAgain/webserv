@@ -43,18 +43,7 @@ void ClientSocket::genResponse(ServerManager &serverManager)
 {
     _status = parseRequest(serverManager);
 
-    // Stampa della struttura HttpRequest
-    std::cout << ORANGE << "Metodo: " << _request.method << RESET << std::endl;
-    std::cout << ORANGE << "Path: " << _request.path << RESET << std::endl;
-    for (std::map<std::string, std::string>::iterator it = _request.headers.begin(); it != _request.headers.end(); ++it)
-    {
-        std::cout << ORANGE << it->first << ": " << it->second << RESET << std::endl;
-    }
-    std::cout << ORANGE << "Body: ";
-    for (size_t i = 0; i < _request.body.size(); i++)
-        std::cout << _request.body[i];
-    std::cout << RESET << std::endl;
-    std::cout << ORANGE << "Request status: " << _status << RESET << std::endl;
+    std::cout << "[ClientSocket] Request status: " << _status << std::endl;
 
     if (_status > 0)
     {

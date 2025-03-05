@@ -116,7 +116,6 @@ std::string Server::readFileContent(HttpResponse &response, std::string const &f
 	std::ostringstream contentStream;
 	std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
 	response.contentType = setContentType(extension);
-	std::cout <<CYAN<< "Content-Type: " << response.contentType <<RESET<< std::endl;
 	if (response.contentType.empty())
 	{
 		file.close();

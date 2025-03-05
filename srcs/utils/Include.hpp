@@ -39,13 +39,13 @@
 #define CYAN    "\033[36m"
 #define ORANGE  "\033[38;5;208m"
 
-/* #define RED     "\033[8m"
-#define GREEN   "\033[8m"
-#define YELLOW  "\033[8m"
-#define BLUE    "\033[8m"
-#define MAGENTA "\033[8m"
-#define CYAN    "\033[8m"
-#define ORANGE  "\033[8m" */
+// #define RED     "\033[8m"
+// #define GREEN   "\033[8m"
+// #define YELLOW  "\033[8m"
+// #define BLUE    "\033[8m"
+// #define MAGENTA "\033[8m"
+// #define CYAN    "\033[8m"
+// #define ORANGE  "\033[8m"
 
 
 #define BUFFERSIZE 4096

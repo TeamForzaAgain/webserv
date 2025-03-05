@@ -272,7 +272,7 @@ void checkDuplicateLocations(const std::vector<Location>& locations)
 	{
 		if (!locationSet.insert(locations[i].path).second)
 		{
-			std::cerr << "Errore: Location duplicata trovata: " << locations[i].path << std::endl;
+			std::cerr << RED << "Errore: Location duplicata trovata: " << locations[i].path << std::endl;
 			throw std::runtime_error("Location duplicata trovata.");
 		}
 	}
@@ -300,14 +300,6 @@ void checkRootDirectory(const ServerConfig& server)
 
 void checkLocationValidity(const ServerConfig& server, const Location& loc)
 {
-	// if (loc.root.empty() && !loc.isAlias)
-	// {
-	// 	std::cerr << RED << "Errore: La location " << loc.path
-	// 				<< " del server " << server.hostName
-	// 				<< " non ha una root o un alias definito." << RESET << std::endl;
-	// 	throw std::runtime_error("Root directory non definita per la location.");
-	// }
-
 	if (!loc.allowedMethods.GET && !loc.allowedMethods.POST && !loc.allowedMethods.DELETE)
 	{
 		std::cerr << RED << "Errore: La location " << loc.path

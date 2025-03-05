@@ -105,7 +105,6 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 			return response;
 		}
 		targetPath = urlDecodeOnce(targetPath);
-		std::cout << YELLOW << "Reading file: " << targetPath << RESET << std::endl;
 		response.body = readFileContent(response, targetPath);
 		if (response.body == "Unsupported Media Type")
 			return genErrorPage(location, 415);

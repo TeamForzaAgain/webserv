@@ -96,7 +96,6 @@ std::string Server::genResponse(HttpRequest &request, int statusCode)
 {
 	HttpResponse response;
 	Location location = findLocation(request);
-	std::cout << CYAN << "statusCode: " << statusCode << RESET << std::endl;
 
 	if (statusCode >= 100)
 		return genErrorPage(location, statusCode).toString();
@@ -113,12 +112,12 @@ std::string Server::genResponse(HttpRequest &request, int statusCode)
 
 	if (session_id.empty() || sessionManager.getSession(session_id) == "")
 	{
-	    std::cout << "❌ Invalid or non-existent session_id received: " << session_id << std::endl;
+		std::cout << "[CookieSessionManager] session_id non valido o inesistente ricevuto: " << session_id << std::endl;
 	    session_id = sessionManager.createSession();
 	}
 	else
 	{
-		std::cout << "✅ Valid session_id recognized: " << session_id << std::endl;
+		std::cout << "[CookieSessionManager] session_id valido riconosciuto: " << session_id << std::endl;
 	}
 
 
@@ -150,7 +149,7 @@ std::string Server::genResponse(HttpRequest &request, int statusCode)
 	else if (request.method == "DELETE")
 		response = genDeleteResponse(request, location);
 
-	std::cout << "🟢 Setting session_id cookie: " << session_id << std::endl;
+	std::cout << "[CookieSessionManager] Impostazione del cookie session_id: " << session_id << std::endl;
 	response.setCookie("session_id", session_id, "Path=/; SameSite=Lax");
 
 	return response.toString();

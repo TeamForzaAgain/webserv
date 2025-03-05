@@ -5,7 +5,6 @@ HttpResponse Server::genPostResponse(HttpRequest const &request, Location const 
 	HttpResponse response;
 
 	std::string targetPath = buildFilePath(request.path, location);
-	std::cout << CYAN << "POST targetPath: " << targetPath << RESET << std::endl;
 	
 	//controlla se la location e' quella di upload usando getUploadLocation()
 	Location const *uploadLocation = getUploadLocation();
