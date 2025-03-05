@@ -5,7 +5,8 @@ const std::map<int, std::string>& statusCodeMessages = HttpStatusCodes::getStatu
 Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls), 
 _hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
 _defIndexFiles(serverconfig.defLocation.indexFiles), _defAutoIndex(serverconfig.defLocation.autoIndex),
-_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations), _maxBodySize(serverconfig.maxBodySize)
+_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations),
+_maxBodySize(serverconfig.maxBodySize), _defaultReturn(serverconfig.defaultReturn)
 {}
 
 Location const *Server::getUploadLocation() const
@@ -128,6 +129,16 @@ std::string Server::genResponse(HttpRequest &request, int statusCode)
 		response.statusMessage = "OK";
 		response.contentType = "text/html";
 		response.body = "<html><body>Session ID: " + session_id + "</body></html>";
+		return response.toString();
+	}
+
+	// **Gestione dei redirect all'interno della location**
+	if (!location.returnConfig.url.empty())
+	{
+		response.statusCode = location.returnConfig.code;
+		response.statusMessage = (location.returnConfig.code == 301) ? "Moved Permanently" : "Found";
+		response.location = location.returnConfig.url;
+
 		return response.toString();
 	}
 

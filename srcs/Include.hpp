@@ -107,7 +107,8 @@ struct HttpResponse
     std::string statusMessage;               // "OK", "Not Found", "Internal Server Error"
     std::string contentType;                 // "text/html", "image/jpeg", "application/json"
 	std::string body;                         // Contenuto della risposta
-    std::map<std::string, std::string> cookies;
+	std::string location;                     // URL di redirect
+	std::map<std::string, std::string> cookies;
 
     void setCookie(const std::string &name, const std::string &value, const std::string &attributes = "");
     std::string toString() const; // Converte la risposta in stringa HTTP

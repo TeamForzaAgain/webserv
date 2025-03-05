@@ -49,7 +49,8 @@ std::string HttpResponse::toString() const
 	requestStream << "Server: webzerv/TeamForzaAgain\r\n";
 	requestStream << "Content-Type: " << contentType << "\r\n";
 	requestStream << "Content-Length: " << body.size() << "\r\n";
-
+	if (!location.empty())
+		requestStream << "Location: " << location << "\r\n";
 	for (std::map<std::string, std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
     {
         std::cout << "🔹 Sending Set-Cookie: " << it->first << "=" << it->second << std::endl;

@@ -44,6 +44,7 @@ class Server
 		std::map<int, std::string>	_errorPages;
 		std::vector<Location>		_locations;
 		int 						_maxBodySize;
+		ReturnConfig				_defaultReturn;
 		SessionManager				sessionManager;
 
 };
