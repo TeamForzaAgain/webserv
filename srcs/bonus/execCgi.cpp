@@ -38,9 +38,18 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         if (request.headers.find("Content-Type") != request.headers.end())
             setenv("CONTENT_TYPE", request.headers.find("Content-Type")->second.c_str(), 1);
 
+        //controla estensione del file
+        std::string extension = targetPath.substr(targetPath.find_last_of(".") + 1);
+        char *command = NULL;
+        if (extension == "py")
+            command = const_cast<char *>("/usr/bin/python3.8");
+        else
+            command = const_cast<char *>("/bin/bash");
+            
+        
         // Esegui effettivamente lo script (qui Python) 
         char *const args[] = {
-            const_cast<char *>("/usr/bin/python3.8"),
+            command,
             const_cast<char *>(targetPath.c_str()),
             NULL
         };

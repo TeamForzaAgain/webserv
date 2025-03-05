@@ -1,5 +1,11 @@
 #include "Server.hpp"
 
+bool Server::isScript(std::string const &targetPath) const
+{
+	return ((targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py") ||
+			(targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".sh"));
+}
+
 std::string Server::urlDecodeOnce(const std::string &encoded) const
 {
     std::ostringstream decoded;

@@ -34,6 +34,7 @@ class Server
 		std::string readFileContent(HttpResponse &response, std::string const &filePath) const;
 		std::string findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const;
 		std::string urlDecodeOnce(const std::string &str) const;
+		bool isScript(const std::string &targetPath) const;
 
 		void printServer() const;
 	private:

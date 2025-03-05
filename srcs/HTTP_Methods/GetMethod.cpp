@@ -1,10 +1,5 @@
 #include "Server.hpp"
 
-static bool isScript(std::string const &targetPath)
-{
-	return targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py";
-}
-
 HttpResponse Server::genAutoIndex(std::string const &path, Location const &location) const
 {
 	HttpResponse response;
