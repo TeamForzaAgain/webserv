@@ -29,20 +29,27 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 
-
 //ANSI color codes
 #define RESET   "\033[0m"
-#define RED     "\033[31m"      /* Red */
-#define GREEN   "\033[32m"      /* Green */
-#define YELLOW  "\033[33m"      /* Yellow */
-#define BLUE    "\033[34m"      /* Blue */
-#define MAGENTA "\033[35m"      /* Magenta */
-#define CYAN    "\033[36m"      /* Cyan */
-#define ORANGE  "\033[38;5;208m" /* Orange */
+// #define RED     "\033[31m"      
+// #define GREEN   "\033[32m"
+// #define YELLOW  "\033[33m"
+// #define BLUE    "\033[34m"
+// #define MAGENTA "\033[35m"
+// #define CYAN    "\033[36m"
+// #define ORANGE  "\033[38;5;208m"
+
+#define RED     "\033[8m"
+#define GREEN   "\033[8m"
+#define YELLOW  "\033[8m"
+#define BLUE    "\033[8m"
+#define MAGENTA "\033[8m"
+#define CYAN    "\033[8m"
+#define ORANGE  "\033[8m"
+
 
 #define BUFFERSIZE 4096
 
-#define UPLOAD_DIRECTORY "./uploads/"
 
 struct Methods
 {
@@ -158,5 +165,11 @@ public:
         return statusMap;
     }
 };
+
+std::vector<std::string> splitServers(std::istream &configStream);
+std::vector<ServerConfig> parseServers(const std::vector<std::string> &serverBlocks);
+bool preliminaryChecks(int ac, char **av, std::stringstream &buffer);
+void cleanConfig(std::istream &configStream, std::stringstream &cleanedConfig);
+void validateServers(const std::vector<ServerConfig>& servers);
 
 #endif

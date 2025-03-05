@@ -5,10 +5,7 @@
 # include <sstream>
 # include <stack>
 # include <set>
-
-# define GREEN "\033[32m"
-# define RED "\033[31m"
-# define RESET "\033[0m"
+# include "Include.hpp"
 
 class SyntaxValidator
 {

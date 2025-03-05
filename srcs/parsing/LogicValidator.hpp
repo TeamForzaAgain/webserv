@@ -6,10 +6,7 @@
 # include <stack>
 # include <set>
 # include <cstdlib>
-
-# define GREEN "\033[32m"
-# define RED "\033[31m"
-# define RESET "\033[0m"
+# include "Include.hpp"
 
 class LogicValidator
 {
@@ -22,9 +19,12 @@ class LogicValidator
 		bool isValidMethod(const std::string &method);
 		bool validateBlockStructure(const std::string &token, int lineNumber);
 		bool validateDirective(const std::string &token, const std::string &value, int lineNumber);
-
+		void validateReturn(const std::string &value, int lineNumber);
+		bool isValidUrl(const std::string &url);
+		bool isValidHttpStatus(const std::string &code);
 	public:
 		LogicValidator(std::stringstream &stream);
+		~LogicValidator();
 		bool validate();
 };
 

@@ -42,7 +42,7 @@ std::string genDefaultErrorPage(HttpResponse &response, int code)
 	return oss.str();
 }
 
-HttpResponse Server::genErrorPage(const Location &location, int code/* , const std::string &message */) const
+HttpResponse Server::genErrorPage(const Location &location, int code) const
 {
 	HttpResponse response;
 	std::string filePath;

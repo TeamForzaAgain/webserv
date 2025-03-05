@@ -1,9 +1,9 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "../Include.hpp"
-#include "../ListeningSocket.hpp"
-#include "../SessionManager.hpp"
+#include "Include.hpp"
+#include "ListeningSocket.hpp"
+#include "SessionManager.hpp"
 
 class Server
 {

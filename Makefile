@@ -2,10 +2,19 @@
 
 NAME = webzerv
 
-SRCS = *.cpp ./serverFiles/*.cpp
+SRCS =	srcs/main.cpp \
+		srcs/bonus/*.cpp \
+		srcs/HTTP_Methods/*.cpp \
+		srcs/parsing/*.cpp \
+		srcs/serverFiles/*.cpp \
+		srcs/socketFiles/*.cpp \
+		srcs/utils/*.cpp
 
 CXX = g++
-CXXFLAGS = -g -Wall -Wextra -Werror -std=c++98 -I. -I./serverFiles
+
+HEADER_FILES = -I./srcs/bonus -I./srcs/parsing -I./srcs/serverFiles -I./srcs/socketFiles -I./srcs/utils
+
+CXXFLAGS = -g -Wall -Wextra -Werror -std=c++98 $(HEADER_FILES)
 
 all: $(NAME)
 

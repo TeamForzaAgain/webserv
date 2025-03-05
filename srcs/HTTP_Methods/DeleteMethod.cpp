@@ -4,7 +4,7 @@ HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location cons
 {
 	HttpResponse response;
 	std::string targetPath = buildFilePath(request.path, location);
-
+	
 	if (targetPath[targetPath.size() - 1] == '/')
 	{
 		if (location.path == getUploadLocation()->path)
@@ -15,14 +15,7 @@ HttpResponse Server::genDeleteResponse(HttpRequest const &request, Location cons
 		response = genErrorPage(location, 403);
 		return response;
 	}
-	if (location.path != getUploadLocation()->path)
-	{
-		response = genErrorPage(location, 403);
-		return response;
-	}
-	// sostituisci i %20 con spazi
 	targetPath = urlDecodeOnce(targetPath);
-	std::cout << YELLOW << "Deleting file: " << targetPath << RESET << std::endl;
 	if (std::remove(targetPath.c_str()) != 0)
 	{
 		return genErrorPage(location, 404);

@@ -2,7 +2,6 @@
 
 static bool isScript(std::string const &targetPath)
 {
-	// controlla che sia richiesto un .py
 	return targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py";
 }
 
@@ -68,8 +67,6 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 	if (targetPath[targetPath.size() - 1] == '/')
 	{
 		response.body = findIndexFileContent(targetPath, location.indexFiles);
-		// if (response.body.empty())
-		// 	response.body = findIndexFileContent(targetPath, _defIndexFiles);
 		if (response.body.empty())
 			response.body = readFileContent(response, joinPaths(targetPath, "index.html"));
 
@@ -85,13 +82,19 @@ HttpResponse Server::genGetResponse(HttpRequest const &request, Location const &
 		{
 			response = genAutoIndex(targetPath, location);
 		}
-		else if (opendir(targetPath.c_str()) == NULL)
-		{
-			response = genErrorPage(location, 404);
-		}
 		else
 		{
-			response = genErrorPage(location, 403);
+			DIR *dir = opendir(targetPath.c_str());
+			if (dir == NULL)
+			{
+				closedir(dir);
+				response = genErrorPage(location, 404);
+			}
+			else
+			{
+				closedir(dir);
+				response = genErrorPage(location, 403);
+			}
 		}
 	}
 	else

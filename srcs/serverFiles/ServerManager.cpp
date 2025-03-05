@@ -110,7 +110,7 @@ void ServerManager::closeClient(size_t &i)
     _clientSockets[_pollfds[i].fd] = NULL;
     _clientSockets.erase(_pollfds[i].fd);
     _pollfds.erase(_pollfds.begin() + i);
-    i--; // Evita errori di iterazione
+    i--;
 }
 
 void ServerManager::readClient(size_t &i)
@@ -134,7 +134,6 @@ void ServerManager::readClient(size_t &i)
 
     tempBuffer[bytesRead] = '\0';
     _clientSockets[_pollfds[i].fd]->addBuffer(tempBuffer, bytesRead);
-    //std::cout << BLUE << "Request: " << _clientSockets[_pollfds[i].fd]->getBuffer() << RESET << std::endl;
     _clientSockets[_pollfds[i].fd]->genResponse(*this);
     if (_clientSockets[_pollfds[i].fd]->getStatus() > 0)
         _pollfds[i].events = POLLOUT;
@@ -178,37 +177,25 @@ void ServerManager::run()
     while (true)
     {
         std::cout << RED << "Polling..." << RESET << std::endl;
-        int activity = poll(_pollfds.data(), _pollfds.size(), 10000);
+        poll(_pollfds.data(), _pollfds.size(), 10000);
+		if (g_signal_status != 0)
+		{
+			if (g_signal_status == SIGINT || g_signal_status == SIGTERM || g_signal_status == SIGHUP)
+			{
+				for (size_t i = 0; i < _pollfds.size(); i++)
+				{
+					closeClient(i);
+				}
 
-        // **Gestione del segnale di interruzione**
-        if (g_signal_status != 0)
-        {
-            // **Chiudere tutte le connessioni attive**
-            for (size_t i = 0; i < _pollfds.size(); i++)
-            {
-                closeClient(i);
-            }
+				_pollfds.clear();
+				_clientSockets.clear();
 
-            _pollfds.clear();
-            _clientSockets.clear();
+				std::cout << "[ServerManager] Server chiuso correttamente." << std::endl;
+				return ;
+			}
+			g_signal_status = 0;
+		}
 
-            std::cout << "[ServerManager] Server chiuso correttamente." << std::endl;
-            return ;
-        }
-
-        if (activity == -1)
-        {
-            if (errno == EINTR)
-            {
-                if (g_signal_status == SIGINT || g_signal_status == SIGTERM || g_signal_status == SIGHUP)
-                    break;
-                continue;
-            }
-            perror(strerror(errno));
-            throw ServerManagerException();
-        }
-
-        std::cout << RED << "Polling done, active sockets: " << activity << RESET << std::endl;
         std::cout << RED << "Active listening sockets: " << _activeLs << RESET << std::endl;
 
         // **Gestione delle nuove connessioni**

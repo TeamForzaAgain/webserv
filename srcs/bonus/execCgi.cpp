@@ -1,6 +1,6 @@
 #include "Server.hpp"
-#include <sys/wait.h>  // waitpid
-#include <signal.h>    // kill
+#include <sys/wait.h>
+#include <signal.h>
 
 HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &request) const
 {
