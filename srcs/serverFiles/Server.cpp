@@ -5,7 +5,8 @@ const std::map<int, std::string>& statusCodeMessages = HttpStatusCodes::getStatu
 Server::Server(ListeningSocket *ls, ServerConfig const &serverconfig) : _ls(ls), 
 _hostName(serverconfig.hostName), _root(serverconfig.defLocation.root), 
 _defIndexFiles(serverconfig.defLocation.indexFiles), _defAutoIndex(serverconfig.defLocation.autoIndex),
-_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations), _maxBodySize(serverconfig.maxBodySize)
+_errorPages(serverconfig.defLocation.errorPages), _locations(serverconfig.locations),
+_maxBodySize(serverconfig.maxBodySize), _defaultReturn(serverconfig.defaultReturn)
 {}
 
 Location const *Server::getUploadLocation() const
@@ -31,7 +32,7 @@ std::string genDefaultErrorPage(HttpResponse &response, int code)
 		<< "</head>\n"
 		<< "<body>\n"
 		<< "    <center>\n"
-		<< "        <h1>" << code << " " << message << "</h1>\n"
+		<< "		<h1>" << code << " " << message << "</h1>\n"
 		<< "    </center>\n"
 		<< "    <hr>\n"
 		<< "    <center>webzerv/TeamForzaAgain</center>\n"
@@ -41,7 +42,7 @@ std::string genDefaultErrorPage(HttpResponse &response, int code)
 	return oss.str();
 }
 
-HttpResponse Server::genErrorPage(const Location &location, int code/* , const std::string &message */) const
+HttpResponse Server::genErrorPage(const Location &location, int code) const
 {
 	HttpResponse response;
 	std::string filePath;
@@ -91,11 +92,11 @@ bool isMethodAllowed(const Location &location, const std::string &method)
 	return false;
 }
 
-std::string Server::genResponse(HttpRequest const &request, int statusCode) const
+std::string Server::genResponse(HttpRequest &request, int statusCode)
 {
 	HttpResponse response;
 	Location location = findLocation(request);
-	std::cout << CYAN << "statusCode: " << statusCode << RESET << std::endl;
+
 	if (statusCode >= 100)
 		return genErrorPage(location, statusCode).toString();
 
@@ -104,12 +105,54 @@ std::string Server::genResponse(HttpRequest const &request, int statusCode) cons
 		response = genErrorPage(location, 405);
 		return response.toString();
 	}
+
+	request.parseCookies();
+
+	std::string session_id = request.cookies["session_id"];
+
+	if (session_id.empty() || sessionManager.getSession(session_id) == "")
+	{
+		std::cout << "[CookieSessionManager] session_id non valido o inesistente ricevuto: " << session_id << std::endl;
+	    session_id = sessionManager.createSession();
+	}
+	else
+	{
+		std::cout << "[CookieSessionManager] session_id valido riconosciuto: " << session_id << std::endl;
+	}
+
+
+	// **Gestione specifica della route /session/** 
+	if (request.path == "/session/")
+	{
+		response.statusCode = 200;
+		response.statusMessage = "OK";
+		response.contentType = "text/html";
+		response.body = "<html><body>Session ID: " + session_id + "</body></html>";
+		return response.toString();
+	}
+
+	// **Gestione dei redirect all'interno della location**
+	if (!location.returnConfig.url.empty())
+	{
+		response.statusCode = location.returnConfig.code;
+		response.statusMessage = (location.returnConfig.code == 301) ? "Moved Permanently" : "Found";
+		response.location = location.returnConfig.url;
+
+		return response.toString();
+	}
+
+	// **Gestione dei metodi HTTP**
 	if (request.method == "GET")
 		response = genGetResponse(request, location);
-	if (request.method == "POST")
+	else if (request.method == "POST")
 		response = genPostResponse(request, location);
 	else if (request.method == "DELETE")
 		response = genDeleteResponse(request, location);
 
-    return response.toString();
+	std::cout << "[CookieSessionManager] Impostazione del cookie session_id: " << session_id << std::endl;
+	response.setCookie("session_id", session_id, "Path=/; SameSite=Lax");
+
+	return response.toString();
 }
+
+

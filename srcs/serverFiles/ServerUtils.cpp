@@ -1,5 +1,11 @@
 #include "Server.hpp"
 
+bool Server::isScript(std::string const &targetPath) const
+{
+	return ((targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".py") ||
+			(targetPath.size() >= 3 && targetPath.substr(targetPath.size() - 3) == ".sh"));
+}
+
 std::string Server::urlDecodeOnce(const std::string &encoded) const
 {
     std::ostringstream decoded;
@@ -110,7 +116,6 @@ std::string Server::readFileContent(HttpResponse &response, std::string const &f
 	std::ostringstream contentStream;
 	std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
 	response.contentType = setContentType(extension);
-	std::cout <<CYAN<< "Content-Type: " << response.contentType <<RESET<< std::endl;
 	if (response.contentType.empty())
 	{
 		file.close();

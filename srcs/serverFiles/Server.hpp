@@ -1,8 +1,9 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "../Include.hpp"
-#include "../ListeningSocket.hpp"
+#include "Include.hpp"
+#include "ListeningSocket.hpp"
+#include "SessionManager.hpp"
 
 class Server
 {
@@ -17,7 +18,7 @@ class Server
 		bool operator<(const Server &other) const { return _hostName < other._hostName; }
 		Location const *getUploadLocation() const;
 
-		std::string genResponse(HttpRequest const &request, int statusCode) const;
+		std::string genResponse(HttpRequest &request, int statusCode);
 		HttpResponse genGetResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genPostResponse(HttpRequest const &request, Location const &location) const;
 		HttpResponse genDeleteResponse(HttpRequest const &request, Location const &location) const;
@@ -33,6 +34,7 @@ class Server
 		std::string readFileContent(HttpResponse &response, std::string const &filePath) const;
 		std::string findIndexFileContent(const std::string &directory, const std::vector<std::string> &indexFiles) const;
 		std::string urlDecodeOnce(const std::string &str) const;
+		bool isScript(const std::string &targetPath) const;
 
 		void printServer() const;
 	private:
@@ -44,6 +46,8 @@ class Server
 		std::map<int, std::string>	_errorPages;
 		std::vector<Location>		_locations;
 		int 						_maxBodySize;
+		ReturnConfig				_defaultReturn;
+		SessionManager				sessionManager;
 
 };
 
