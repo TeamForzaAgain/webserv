@@ -57,7 +57,7 @@ HttpResponse Server::execCgi(std::string const &targetPath, HttpRequest const &r
         };
         if (execve(args[0], args, environ) == -1)
         {
-            perror(strerror(errno));
+            std::cerr << RED << "[Server] Error executing CGI: " << strerror(errno) << RESET << std::endl;
             if (execve("/bin/true", (char *const []){NULL}, environ) == -1)
             {
                 perror(strerror(errno));
