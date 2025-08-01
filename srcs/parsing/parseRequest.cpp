@@ -160,6 +160,19 @@ int ClientSocket::parseRequest(ServerManager &serverManager)
                 _uploadFile.close();
                 return 1; // Completa
             }
+            if (_server->getMaxBodySize() != 0 && _bytesWritten >= _server->getMaxBodySize())
+            {
+                _uploadFile.close();
+                std::string filename = _request.headers["filename"];
+                Location const *location = _server->getUploadLocation();
+                if (location)
+                {
+                    std::string filePath = _server->buildFilePath(_request.path, *location) + filename;
+                    std::remove(filePath.c_str()); // Elimina il file
+                }
+
+                return 413; // Payload too large
+            }
         }
         else
         {
